@@ -1,16 +1,22 @@
 import numpy as np
 import networkx as nx
 
-class TimeseriesToOrdinalPatternGraph:
+class MultivariateTimeseriesToOrdinalPatternGraph:
     def __init__(self, w, tau, use_quantiles=False, Q=4):
         self.w = w
         self.tau = tau
         self.use_quantiles = use_quantiles
         self.Q = Q
 
-    def embeddings(self, time_series):
-        n = len(time_series)
-        embedded_series = [time_series[i:i + self.w * self.tau:self.tau] for i in range(n - self.w * self.tau + 1)]
+    def multivariate_embeddings(self, multivariate_time_series):
+        m = len(multivariate_time_series)
+        n = min(len(series) for series in multivariate_time_series)
+        embedded_series = []
+        for i in range(n - self.w * self.tau + 1):
+            window = []
+            for series in multivariate_time_series:
+                window.append(series[i:i + self.w * self.tau:self.tau])
+            embedded_series.append(np.array(window))
         return np.array(embedded_series)
 
     def ordinal_pattern(self, vector):
@@ -28,13 +34,24 @@ class TimeseriesToOrdinalPatternGraph:
                 ranks[index] = rank
         return tuple(ranks)
 
-    def to_graph(self, time_series):
-        embedded_series = self.embeddings(time_series)
-        ordinal_patterns = [self.ordinal_pattern(vec) for vec in embedded_series]
+    def multivariate_ordinal_pattern(self, vectors):
+        m, w = vectors.shape
+        patterns = []
+        for i in range(m):
+            pattern = self.ordinal_pattern(vectors[i])
+            patterns.append(pattern)
+        combined_pattern = tuple([p[i] for p in patterns for i in range(len(p))])
+        return combined_pattern
 
+    def to_graph(self, multivariate_time_series):
+        embedded_series = self.multivariate_embeddings(multivariate_time_series)
+        ordinal_patterns = [self.multivariate_ordinal_pattern(vec) for vec in embedded_series]
+
+        # Initialize a directed graph
         G = nx.DiGraph()
         transitions = {}
 
+        # Record transitions between consecutive ordinal patterns
         for i in range(len(ordinal_patterns) - 1):
             pattern = ordinal_patterns[i]
             next_pattern = ordinal_patterns[i + 1]
@@ -46,6 +63,7 @@ class TimeseriesToOrdinalPatternGraph:
                 transitions[(pattern, next_pattern)] = 0
             transitions[(pattern, next_pattern)] += 1
 
+        # Add edges to the graph with weights representing transition probabilities
         for (start, end), weight in transitions.items():
             G.add_edge(start, end, weight=weight / len(ordinal_patterns))
 
