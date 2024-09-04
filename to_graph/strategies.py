@@ -5,7 +5,6 @@ import networkx as nx
 import itertools
 import math
 
-#TODO: migrate to the following package: to_graph
 
 
 class EdgeWeightingStrategy:

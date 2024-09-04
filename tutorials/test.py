@@ -73,21 +73,74 @@ timegraph_1.to_sequence(ToSequenceVisitor()\
 
 
 timegraph_2.to_sequence(ToSequenceVisitorSlidingWindow()\
-    .next_node_strategy(StrategySelectNextNodeRandomly())\
+    .next_node_strategy(StrategySelectNextNodeRandomWithRestart())\
     .next_value_strategy(StrategyNextValueInNodeRandomForSlidingWindow().skip_every_x_steps(1))\
     .ts_length(50))\
     .draw_sequence()
 
 
 timegraph_3.to_sequence(ToSequenceVisitor()\
-    .next_node_strategy(StrategySelectNextNodeRandomlyFromNeighboursAcrossGraphs().change_graphs_every_x_steps(2))\
+    .next_node_strategy(StrategySelectNextNodeRandomWithRestart().change_graphs_every_x_steps(2))\
     .next_value_strategy(StrategyNextValueInNodeRoundRobin().skip_every_x_steps(1))\
     .ts_length(50))\
     .draw_sequence()
 
 
 timegraph_4.to_sequence(ToSequenceVisitorSlidingWindow()\
-    .next_node_strategy(StrategySelectNextNodeRandomlyFromNeighboursAcrossGraphs())\
+    .next_node_strategy(StrategySelectNextNodeRandomWithRestart())\
     .next_value_strategy(StrategyNextValueInNodeRoundRobinForSlidingWindow())\
     .ts_length(100))\
     .draw_sequence()
+
+
+
+"""
+
+import os
+import sys
+nb_dir = os.path.split(os.getcwd())[0]
+if nb_dir not in sys.path:
+    sys.path.append(nb_dir)
+
+import os
+import csv
+import numpy as np
+import pandas as pd
+import networkx as nx
+import matplotlib.pyplot as plt
+from timeseries.strategies import TimeseriesToGraphStrategy, TimeseriesEdgeVisibilityConstraintsNatural, TimeseriesEdgeVisibilityConstraintsHorizontal, EdgeWeightingStrategyNull
+from core import model 
+from sklearn.model_selection import train_test_split
+from tsg_io.input import CsvFile
+
+apple_data = pd.read_csv(os.path.join(os.getcwd(), "apple", "APPLE.csv"))
+
+timegraph_1 = model.Timeseries(CsvFile(os.path.join(os.getcwd(), "apple", "APPLE.csv"), "Close").from_csv()).get_ts()
+
+
+def plot_timeseries(sequence, title, x_legend, y_legend, color):
+    plt.figure(figsize=(10, 6))
+    plt.plot(sequence, linestyle='-', color=color)
+    
+    plt.title(title)
+    plt.xlabel(x_legend)
+    plt.ylabel(y_legend)
+    plt.grid(True)
+    plt.show()
+
+
+def plot_timeseries_sequence(df_column, title, x_legend, y_legend, color='black'):
+    sequence = model.Timeseries(model.TimeseriesArrayStream(df_column)).to_sequence()
+    plot_timeseries(sequence, title, x_legend, y_legend, color)
+
+
+segment_1 = timegraph_1[60:110]
+segment_2 = timegraph_1[120:170]
+segment_3 = timegraph_1[190:240]
+
+plot_timeseries(segment_1, "", "Date", "Value", "black")
+
+plot_timeseries(segment_2, "", "Date", "Value", "black")
+
+plot_timeseries(segment_3, "", "Date", "Value", "black")
+"""

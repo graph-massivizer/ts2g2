@@ -197,8 +197,6 @@ class TimeseriesView:
         return hashlib.md5(str_to_hash.encode()).hexdigest()
 
 
-# TODO: to be renamed into TimeGraph?
-# TODO: we need to delete the TimeGraph object (not this one - the redundant one)?
 class TimeGraph:
     """
     Stores already made graph, allows us to add edges and links between nodes.
@@ -249,7 +247,7 @@ class TimeGraph:
                 if node_1 not in self.graph:
                     continue
 
-                for node_2 in list(self.graphs[j].values())[i+1:]:
+                for key, node_2 in list(self.graphs[j].items())[i+1:]:
                     if node_2 == None:
                         break
                     if node_2 not in self.graph:
@@ -257,6 +255,8 @@ class TimeGraph:
 
                     if(set(list(node_1.edges)) == set(list(node_2.edges))):
                         self.graph = self._combine_subgraphs(self.graph, node_1, node_2, self.attribute)
+                        del self.graphs[j][key]
+                        
 
         return self
 
@@ -451,9 +451,10 @@ class ToSequenceVisitorSlidingWindow(ToSequenceVisitorMaster):
         ts_len = 0
         while len(self.sequences[0]) < self.timeseries_len:
             for j in range(len(self.sequences)):
-
+                
                 index = 0
-                for i in range(len(self.nodes[j])):
+                for i in range(len(list(self.nodes[j]))):
+                
                     if(self._is_equal(current_nodes[j], list(self.graph.nodes)[i])):
                         index = i
                         break
@@ -531,11 +532,11 @@ class ToSequenceVisitor(ToSequenceVisitorMaster):
                 self.sequences[j] = self.value_strategy.append(self.sequences[j], current_nodes_data[j], j, index)
                 if self.sequences[j][-1] == None:
                     return
-
+                
             for j in range(self.skip_values+1):
                 for k in range(len(current_nodes)):
                     current_nodes[k] = self.node_strategy.next_node(i, k, current_nodes, self.switch_graphs, current_nodes[0])
-
+                    
                     new_index = self.nodes[k].index(current_nodes[k])
                     current_nodes_data[k] = self.data_nodes[k][new_index]
                     if(current_nodes[k] == None):

@@ -1,4 +1,4 @@
-from timeseries.strategies import EdgeWeightingStrategyNull, TimeseriesEdgeVisibilityConstraintsHorizontal, TimeseriesEdgeVisibilityConstraintsNatural, TimeseriesEdgeVisibilityConstraintsVisibilityAngle, TimeseriesToGraphStrategy
+from to_graph.strategies import EdgeWeightingStrategyNull, TimeseriesEdgeVisibilityConstraintsHorizontal, TimeseriesEdgeVisibilityConstraintsNatural, TimeseriesEdgeVisibilityConstraintsVisibilityAngle, TimeseriesToGraphStrategy
 
 
 #TODO: this is a builder!
