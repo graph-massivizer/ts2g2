@@ -40,7 +40,14 @@ class TimeSeriesEmbedding:
 
         model.fit(self.X, self.X[:, -1], epochs=epochs, verbose=1, callbacks=[callback])
         self.encoder_model = Sequential([model.layers[0]])
+        return self
 
     def get_embeddings(self):
         embeddings = self.encoder_model.predict(self.X)
         return embeddings
+    
+    def normalize_data(dataset,column):
+        data = dataset[column].values
+        scaler = MinMaxScaler()
+        return scaler.fit_transform(data.reshape(-1, 1)).flatten() 
+    

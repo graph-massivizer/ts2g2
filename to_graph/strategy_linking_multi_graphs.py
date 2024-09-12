@@ -43,8 +43,6 @@ class StrategyLinkingMultipleGraphsByTimeCooccurrence(StrategyLinkingMultipleGra
 
     def apply(self):
 
-        g = nx.Graph()
-
         min_size = None
 
         if isinstance(self.graphs, list):
@@ -63,6 +61,12 @@ class StrategyLinkingMultipleGraphsByTimeCooccurrence(StrategyLinkingMultipleGra
             for node in list(graph.nodes(data = True)):
                 node[1]['order'] = i
                 i += 1
+
+        g = None
+        if isinstance(list(self.graphs.values())[0], nx.DiGraph):
+            g = nx.DiGraph()
+        else:
+            g = nx.Graph()
 
         for graph in self.graphs.values():
             g = nx.compose(g, graph)

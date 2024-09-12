@@ -1,5 +1,4 @@
-from to_graph.strategies import EdgeWeightingStrategyNull, TimeseriesEdgeVisibilityConstraintsHorizontal, TimeseriesEdgeVisibilityConstraintsNatural, TimeseriesEdgeVisibilityConstraintsVisibilityAngle, TimeseriesToGraphStrategy
-
+from to_graph.strategies import EdgeWeightingStrategyNull, TimeseriesEdgeVisibilityConstraintsHorizontal, TimeseriesEdgeVisibilityConstraintsNatural, TimeseriesEdgeVisibilityConstraintsVisibilityAngle, TimeseriesToGraphStrategy, TimeseriesToOrdinalPatternGraph, TimeseriesToQuantileGraph
 
 #TODO: this is a builder!
 class BuildStrategyForTimeseriesToGraph:
@@ -54,3 +53,26 @@ class BuildTimeseriesToGraphHorizontalVisibilityStrategy(BuildStrategyForTimeser
     def with_limit(self, limit):
         self.visibility[0] = TimeseriesEdgeVisibilityConstraintsHorizontal(limit)
         return self
+
+
+class BuildTimeseriesToGraphOrdinalPartition:
+
+    def __init__(self, w, tau, use_quantiles=False, Q=4):
+        self.w = w
+        self.tau = tau
+        self.use_quantiles = use_quantiles
+        self.Q = Q
+    
+    def get_strategy(self):
+        """Returns strategy."""
+        return TimeseriesToOrdinalPatternGraph(self.w, self.tau, self.use_quantiles, self.Q)
+    
+class BuildTimeseriesToGraphQuantile:
+    
+    def __init__(self, Q, phi):
+        self.Q = Q
+        self.phi = phi
+
+    def get_strategy(self):
+        return TimeseriesToQuantileGraph(self.Q, phi = self.phi)
+    

@@ -104,6 +104,80 @@ class StrategyNextValueInNodeRoundRobinForSlidingWindow(StrategyNextValueInNode)
         return "round robin"
 
 
+class StrategyNextValueInNodeOrdinalPartition(StrategyNextValueInNode):
+    def __init__(self):
+        super().__init__()
+    
+    #here I take into account that ordinal partition numbers start with 0
+    def append(self, series, graph_index, data_node, frequencies, bins, w):
+
+        frequencies = frequencies[graph_index]
+        bins = bins[graph_index]
+        higher_value = None
+        lower_value = None
+        tuple = data_node[1]['ordinal_pattern']
+        tuple = list(tuple)
+        lower_index = None
+        higher_index = None
+        if(tuple[len(tuple)-1]) == 0:
+            higher_index = tuple.index(1)
+        elif(tuple[len(tuple)-1] == len(tuple) - 1):
+            lower_index = tuple.index(len(tuple) - 2)
+        else:
+            higher_index = tuple.index(tuple[len(tuple)-1]+1)
+            lower_index = tuple.index(tuple[len(tuple)-1]-1)
+        
+        if(higher_index is not None):
+            higher_value = series[len(series)-((w-1)-higher_index)]
+        else:
+            higher_value = bins[len(bins)-1]
+
+        if(lower_index is not None):
+            lower_value = series[len(series)-((w-1)-lower_index)]
+        else:
+            lower_value = bins[0]
+        
+        #I don't know why but after a while it mixes higher and lower values
+        if(higher_value < lower_value):
+            x = higher_value
+            higher_value = lower_value
+            lower_value = x
+        
+
+        index_a = np.digitize(lower_value, bins)-1
+        index_b = np.digitize(higher_value, bins, right=True)-1
+        bins_in_range = bins[index_a:index_b+2]
+        frequencies_in_range = frequencies[index_a:index_b+2]
+        probabilities = frequencies_in_range / frequencies_in_range.sum()
+        if(len(frequencies_in_range) == 0):
+            series.append(lower_value)
+            return series
+        
+        chosen_bin_idx = np.random.choice(len(frequencies_in_range), p=probabilities)
+        if(chosen_bin_idx == len(bins_in_range)-1):
+            chosen_bin_idx-=1
+        series.append(np.random.uniform(bins_in_range[chosen_bin_idx], bins_in_range[chosen_bin_idx + 1]))
+        return series
+        
+
+
+    def append_start(self, series, graph_index, data_node, frequencies, bins, w):
+        frequencies = frequencies[graph_index]
+        bins = bins[graph_index]
+        tuple = data_node[1]['ordinal_pattern']
+        tuple = list(tuple)
+        #TODO:look if this [0] is ok at the end
+        chosen_bins = np.random.choice(len(frequencies), size=w, p=(frequencies/np.sum(frequencies)))
+        chosen_values = [np.random.uniform(bins[bin_idx], bins[bin_idx + 1]) for bin_idx in chosen_bins]
+        chosen_values = sorted(chosen_values, reverse=True)
+
+        for i in range(w):
+            series.append(chosen_values[tuple[i]])
+        return series
+    
+    def get_name(self):
+        return "ordinal partition"
+
 
 
 
@@ -153,8 +227,9 @@ class StrategySelectNextNodeRandomlyFromNeighboursAcrossGraphs(StrategySelectNex
     def next_node(self, i, graph_index, nodes, switch, node):
         index = int((i/switch) % len(nodes))
         neighbors = set(self.graph.neighbors(nodes[index]))
-
         neighbors = list(set(self.nodes[graph_index]) & neighbors)
+        if(len(neighbors) == 0):
+            return random.choice(self.nodes[graph_index])
         return random.choice(neighbors)
 
     def get_name(self):
@@ -169,7 +244,8 @@ class StrategySelectNextNodeRandomlyFromNeighboursFromFirstGraph(StrategySelectN
     def next_node(self, i, graph_index, nodes, switch, node):
         neighbors = set(self.graph.neighbors(node))
         neighbors = list(set(self.nodes[graph_index]) & neighbors)
-
+        if(len(neighbors) == 0):
+            return random.choice(self.nodes[graph_index])
         return random.choice(neighbors)
 
     def get_name(self):
@@ -196,6 +272,8 @@ class StrategySelectNextNodeRandomDegree(StrategySelectNextNode):
         nodes_weighted_tuples = [(n, float(len([x for x in list(set(self.nodes[graph_index]) & set(self.graph.neighbors(node)))]))/float(len(nodes[graph_index]))) for n in list(set(self.graph.neighbors(node)) & set(self.nodes[graph_index]))]
         nodes_new = [n[0] for n in nodes_weighted_tuples]
         node_weights = [n[1] for n in nodes_weighted_tuples]
+        if(len(nodes_new) == 0):
+            return random.choice(self.nodes[graph_index])
         if np.min(node_weights)>0:
             node_weights = np.round(np.divide(node_weights, np.min(node_weights)), decimals=4)
         node_weights = np.divide(node_weights, np.sum(node_weights))

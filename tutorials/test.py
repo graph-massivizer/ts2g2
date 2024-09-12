@@ -4,17 +4,50 @@ nb_dir = os.path.split(os.getcwd())[0]
 if nb_dir not in sys.path:
     sys.path.append(nb_dir)
 
-from core.model import Timeseries, TimeseriesPreprocessing, TimeseriesPreprocessingSegmentation, TimeseriesPreprocessingSlidingWindow, TimeseriesPreprocessingComposite, TimeseriesView, TimeGraph, ToSequenceVisitorSlidingWindow, ToSequenceVisitor
-
+from core.model import Timeseries, TimeseriesPreprocessing, TimeseriesPreprocessingSegmentation, TimeseriesPreprocessingSlidingWindow, TimeseriesPreprocessingComposite, TimeseriesView, TimeGraph, ToSequenceVisitorSlidingWindow, ToSequenceVisitor, ToSequenceVisitorOrdinalPartition, GraphEmbeddings
+#from embeddings.vectors import TimeSeriesEmbedding
 from tsg_io.input import CsvFile
-from from_graph.strategy_to_time_sequence import StrategyNextValueInNodeRandom, StrategyNextValueInNodeRandomForSlidingWindow, StrategyNextValueInNodeRoundRobin, StrategyNextValueInNodeRoundRobinForSlidingWindow, StrategySelectNextNodeRandomlyFromNeighboursAcrossGraphs, StrategySelectNextNodeRandomlyFromNeighboursFromFirstGraph, StrategySelectNextNodeRandomly, StrategySelectNextNodeRandomDegree, StrategySelectNextNodeRandomWithRestart
+from from_graph.strategy_to_time_sequence import StrategyNextValueInNodeRandom, StrategyNextValueInNodeRandomForSlidingWindow, StrategyNextValueInNodeRoundRobin, StrategyNextValueInNodeRoundRobinForSlidingWindow, StrategySelectNextNodeRandomlyFromNeighboursAcrossGraphs, StrategySelectNextNodeRandomlyFromNeighboursFromFirstGraph, StrategySelectNextNodeRandomly, StrategySelectNextNodeRandomDegree, StrategySelectNextNodeRandomWithRestart, StrategyNextValueInNodeOrdinalPartition
 from to_graph.strategy_linking_graph import StrategyLinkingGraphByValueWithinRange, LinkNodesWithinGraph
 from to_graph.strategy_linking_multi_graphs import LinkGraphs
-from to_graph.strategy_to_graph import BuildTimeseriesToGraphNaturalVisibilityStrategy, BuildTimeseriesToGraphHorizontalVisibilityStrategy
+from to_graph.strategy_to_graph import BuildTimeseriesToGraphNaturalVisibilityStrategy, BuildTimeseriesToGraphHorizontalVisibilityStrategy, BuildTimeseriesToGraphOrdinalPartition, BuildTimeseriesToGraphQuantile
 
 amazon_path = os.path.join(os.getcwd(), "amazon", "AMZN.csv")
 apple_path = os.path.join(os.getcwd(), "apple", "APPLE.csv")
 
+
+timegraph_ordinal_partition = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
+    .with_preprocessing(TimeseriesPreprocessingSegmentation(60, 120))\
+    .add(Timeseries(CsvFile(amazon_path, "Close").from_csv())\
+        .with_preprocessing(TimeseriesPreprocessingSegmentation(120, 180)))\
+    .add(Timeseries(CsvFile(amazon_path, "Close").from_csv())\
+        .with_preprocessing(TimeseriesPreprocessingSegmentation(500, 560)))\
+    .add(Timeseries(CsvFile(amazon_path, "Close").from_csv())\
+        .with_preprocessing(TimeseriesPreprocessingSegmentation(700, 760)))\
+    .add(Timeseries(CsvFile(amazon_path, "Close").from_csv())\
+        .with_preprocessing(TimeseriesPreprocessingSegmentation(1000, 1060)))\
+    .to_histogram(15)\
+    .to_graph(BuildTimeseriesToGraphOrdinalPartition(10, 5).get_strategy())\
+    .link(LinkGraphs().time_cooccurrence())\
+    .add_edge(0,2)\
+    .link(LinkNodesWithinGraph().seasonalities(4))\
+    .draw("purple")
+
+
+timegraph_ordinal_partition.to_sequence(ToSequenceVisitorOrdinalPartition()\
+    .next_node_strategy(StrategySelectNextNodeRandomWithRestart())\
+    .next_value_strategy(StrategyNextValueInNodeOrdinalPartition())\
+    .ts_length(100))\
+    .draw_sequence()
+
+
+
+timegraph_quantile = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
+    .with_preprocessing(TimeseriesPreprocessingSegmentation(60, 120))\
+    .to_graph(BuildTimeseriesToGraphQuantile(4, 1).get_strategy())\
+    .add_edge(0,2)\
+    .link(LinkNodesWithinGraph().seasonalities(4))\
+    .draw("grey")
 
 
 timegraph_1 = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
@@ -25,6 +58,7 @@ timegraph_1 = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
     .link(LinkNodesWithinGraph().by_value(StrategyLinkingGraphByValueWithinRange(2)).seasonalities(15))\
     .draw("blue")
 
+
 timegraph_2 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
     .with_preprocessing(TimeseriesPreprocessingComposite()\
         .add(TimeseriesPreprocessingSegmentation(60, 120))\
@@ -33,6 +67,7 @@ timegraph_2 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
     .link(LinkGraphs().sliding_window())\
     .combine_identical_subgraphs()\
     .draw("red")
+
 
 timegraph_3 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
     .with_preprocessing(TimeseriesPreprocessingSegmentation(60, 90))\
@@ -45,6 +80,7 @@ timegraph_3 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
     .link(LinkNodesWithinGraph().by_value(StrategyLinkingGraphByValueWithinRange(0.5)))\
     .combine_identical_nodes()\
     .draw("brown")
+
 
 timegraph_4 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
     .with_preprocessing(TimeseriesPreprocessingComposite()\
@@ -63,6 +99,20 @@ timegraph_4 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
     .combine_identical_subgraphs()\
     .link(LinkNodesWithinGraph().seasonalities(15))\
     .draw("green")
+
+
+embedding = GraphEmbeddings([timegraph_1, timegraph_2, timegraph_3, timegraph_4, timegraph_ordinal_partition, timegraph_quantile])\
+        .get_graph_embedding()\
+        .get_ranking()\
+        .print_ranking()\
+        .get_cosine_distance(timegraph_1, timegraph_3)\
+        .get_cosine_distance(timegraph_1, timegraph_4)\
+        .get_cosine_distance(timegraph_1, timegraph_2)\
+        .get_cosine_distance(timegraph_1, timegraph_ordinal_partition)\
+        .get_cosine_distance(timegraph_3, timegraph_4)\
+
+
+
 
 
 timegraph_1.to_sequence(ToSequenceVisitor()\
