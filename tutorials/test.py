@@ -4,8 +4,7 @@ nb_dir = os.path.split(os.getcwd())[0]
 if nb_dir not in sys.path:
     sys.path.append(nb_dir)
 
-from core.model import Timeseries, TimeseriesPreprocessing, TimeseriesPreprocessingSegmentation, TimeseriesPreprocessingSlidingWindow, TimeseriesPreprocessingComposite, TimeseriesView, TimeGraph, ToSequenceVisitorSlidingWindow, ToSequenceVisitor, ToSequenceVisitorOrdinalPartition, GraphEmbeddings
-#from embeddings.vectors import TimeSeriesEmbedding
+from core.model import Timeseries, TimeseriesPreprocessing, TimeseriesPreprocessingSegmentation, TimeseriesPreprocessingSlidingWindow, TimeseriesPreprocessingComposite, TimeseriesView, TimeGraph, ToSequenceVisitorSlidingWindow, ToSequenceVisitor, ToSequenceVisitorOrdinalPartition, GraphEmbeddings, TimeseriesEmbeddings
 from tsg_io.input import CsvFile
 from from_graph.strategy_to_time_sequence import StrategyNextValueInNodeRandom, StrategyNextValueInNodeRandomForSlidingWindow, StrategyNextValueInNodeRoundRobin, StrategyNextValueInNodeRoundRobinForSlidingWindow, StrategySelectNextNodeRandomlyFromNeighboursAcrossGraphs, StrategySelectNextNodeRandomlyFromNeighboursFromFirstGraph, StrategySelectNextNodeRandomly, StrategySelectNextNodeRandomDegree, StrategySelectNextNodeRandomWithRestart, StrategyNextValueInNodeOrdinalPartition
 from to_graph.strategy_linking_graph import StrategyLinkingGraphByValueWithinRange, LinkNodesWithinGraph
@@ -14,6 +13,7 @@ from to_graph.strategy_to_graph import BuildTimeseriesToGraphNaturalVisibilitySt
 
 amazon_path = os.path.join(os.getcwd(), "amazon", "AMZN.csv")
 apple_path = os.path.join(os.getcwd(), "apple", "APPLE.csv")
+
 
 
 timegraph_ordinal_partition = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
@@ -101,7 +101,7 @@ timegraph_4 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
     .draw("green")
 
 
-embedding = GraphEmbeddings([timegraph_1, timegraph_2, timegraph_3, timegraph_4, timegraph_ordinal_partition, timegraph_quantile])\
+embedding = GraphEmbeddings([timegraph_1, timegraph_2, timegraph_3, timegraph_4, timegraph_ordinal_partition, timegraph_quantile], embedding_length=20)\
         .get_graph_embedding()\
         .get_ranking()\
         .print_ranking()\
@@ -110,10 +110,53 @@ embedding = GraphEmbeddings([timegraph_1, timegraph_2, timegraph_3, timegraph_4,
         .get_cosine_distance(timegraph_1, timegraph_2)\
         .get_cosine_distance(timegraph_1, timegraph_ordinal_partition)\
         .get_cosine_distance(timegraph_3, timegraph_4)\
+        .get_euclidean_distance(timegraph_1, timegraph_3)\
+        .get_euclidean_distance(timegraph_3, timegraph_ordinal_partition)\
+        .rbo(timegraph_4, timegraph_1)
+
+print(embedding)
+
+ts_1 = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
+    .with_preprocessing(TimeseriesPreprocessingSegmentation(60, 90))
+
+ts_2 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
+    .with_preprocessing(TimeseriesPreprocessingComposite()\
+        .add(TimeseriesPreprocessingSegmentation(60, 120)))
+
+ts_3 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
+    .with_preprocessing(TimeseriesPreprocessingSegmentation(60, 90))\
+    .add(Timeseries(CsvFile(apple_path, "Close").from_csv())\
+        .with_preprocessing(TimeseriesPreprocessingSegmentation(90, 120)))\
+    .add(Timeseries(CsvFile(apple_path, "Close").from_csv())\
+        .with_preprocessing(TimeseriesPreprocessingSegmentation(150, 180)))
+
+ts_4 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
+    .with_preprocessing(TimeseriesPreprocessingComposite()\
+        .add(TimeseriesPreprocessingSegmentation(60, 110)))\
+    .add(Timeseries(CsvFile(apple_path, "Close").from_csv())\
+        .with_preprocessing(TimeseriesPreprocessingComposite()\
+            .add(TimeseriesPreprocessingSegmentation(120, 170)))\
+        .add(Timeseries(CsvFile(apple_path, "Close").from_csv())\
+            .with_preprocessing(TimeseriesPreprocessingComposite()\
+                    .add(TimeseriesPreprocessingSegmentation(190, 240)))))
+
+ts_ord_part = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
+    .with_preprocessing(TimeseriesPreprocessingSegmentation(60, 120))\
+    .add(Timeseries(CsvFile(amazon_path, "Close").from_csv())\
+        .with_preprocessing(TimeseriesPreprocessingSegmentation(120, 180)))\
+    .add(Timeseries(CsvFile(amazon_path, "Close").from_csv())\
+        .with_preprocessing(TimeseriesPreprocessingSegmentation(500, 560)))\
+    .add(Timeseries(CsvFile(amazon_path, "Close").from_csv())\
+        .with_preprocessing(TimeseriesPreprocessingSegmentation(700, 760)))\
+    .add(Timeseries(CsvFile(amazon_path, "Close").from_csv())\
+        .with_preprocessing(TimeseriesPreprocessingSegmentation(1000, 1060)))\
+
+ts_embedding = TimeseriesEmbeddings([ts_1], 20)\
+        .get_embeddings()
 
 
 
-
+"""
 
 timegraph_1.to_sequence(ToSequenceVisitor()\
         .next_node_strategy(StrategySelectNextNodeRandomWithRestart())\
@@ -143,7 +186,7 @@ timegraph_4.to_sequence(ToSequenceVisitorSlidingWindow()\
     .draw_sequence()
 
 
-
+"""
 """
 
 import os
