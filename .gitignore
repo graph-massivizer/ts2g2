@@ -167,3 +167,6 @@ cython_debug/
 drafts
 
 RELEASE.md
+*.xml
+fundimentials
+fundamential

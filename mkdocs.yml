@@ -1,12 +1,13 @@
 # Project information
-site_name: tsg2
+site_url: https://timeseriestographs.com
+site_name: ts2g2
 site_author: Joze Rozanec
 site_description: >-
   Package for time series to graph conversion and time series generation from graphs
 
 # Repository
-repo_name: jmrozanec/time-series-generator
-repo_url: https://github.com/jmrozanec/time-series-generator
+repo_name: graph-massivizer/ts2g2
+repo_url: https://github.com/graph-massivizer/ts2g2
 
 # Configuration
 theme:
@@ -47,6 +48,14 @@ edit_uri: ""
 plugins:
   - search
   - mkdocs-jupyter
+  - mkdocstrings:
+      handlers:
+        python:
+          selection:
+            filters:
+              - "!^_" 
+          options:
+            show_source: false
 
 # Markdown Extensions
 markdown_extensions:
@@ -72,7 +81,11 @@ nav:
   - Home: index.md
 
   - Documentation:
-    - Overview: documentation/overview.md
-    - Configuration: documentation/configuration.md
+    - Input/output: documentation/tsg_io.md
+    - Model: documentation/model.md
+    - To Time sequence strategy: documentation/strategy_to_time_sequence.md
+    - Graph linking strategy: documentation/strategy_linking_graph.md
+    - Strategy connecting multiple graphs: documentation/strategy_linking_multi_graphs.md
+    - To graph strategy: documentation/strategy_to_graph.md
 
-  - Development: development.md
+  - Tutorial: tutorial.ipynb

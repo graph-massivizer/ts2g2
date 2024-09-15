@@ -1,19 +1,12 @@
 import numpy as np
 
+
+#TODO: to be migrated/superseded by strategies_to_time_sequence
+#TODO: after migration, delete
 class GraphToTimeseriesStrategy:
     def to_sequence(self, graph, sequence_length):
         return None
 
-class RandomNodeSequenceGenerationStrategy(GraphToTimeseriesStrategy):
-    def to_sequence(self, graph, sequence_length):
-        sequence = []
-        nodes = [n for n in graph.nodes()]
-
-        while len(sequence) < sequence_length:
-            node = np.random.choice(nodes)
-            sequence = sequence + [graph.nodes[node]['value']]
-
-        return sequence
 
 class RandomNodeNeighbourSequenceGenerationStrategy(GraphToTimeseriesStrategy):
     def to_sequence(self, graph, sequence_length):

@@ -1,10 +1,11 @@
 """
 Time series graphs
 """
-from core.model import TimeseriesGraph
 import networkx as nx
 import itertools
 import math
+
+#TODO: migrate to the following package: to_graph
 
 
 class EdgeWeightingStrategy:
@@ -29,6 +30,14 @@ class EdgeWeightingStrategyAngle(EdgeWeightingStrategy):
 class EdgeWeightingStrategyNull(EdgeWeightingStrategy):
     def weight_edge(self, G, x1, x2, y1, y2):
         return None
+
+
+class TimeseriesGraph:
+    def __init__(self, graph):
+        self.graph = graph
+
+    def to_sequence(self, graph_to_timeseries_strategy, sequence_length):
+        return graph_to_timeseries_strategy.to_sequence(self.graph, sequence_length)
 
 
 class TimeseriesToGraphStrategy:
@@ -99,11 +108,21 @@ class TimeseriesToGraphStrategy:
         if (graph_type == "undirected"):
             return nx.Graph()
         return nx.DiGraph()
+    
+    def get_name(self):
+        name = ""
+        for i in range(len(self.visibility_constraints)):
+            name += self.visibility_constraints[i].get_name()
+        
+        return name
 
 
 class TimeseriesEdgeVisibilityConstraints:
     def is_obstructed(self, timeseries, x1, x2, y1, y2):
         return None
+    
+    def get_name(self):
+        pass
 
 
 class EdgeAdditionStrategy:
@@ -150,9 +169,12 @@ class TimeseriesEdgeVisibilityConstraintsNatural(TimeseriesEdgeVisibilityConstra
            https://doi.org/10.7498/APS.61.030506
     """
     limit = 0
+    name = "Natural visibility strategy"
 
     def __init__(self, limit=0):
         self.limit = limit
+        if limit > 0:
+            self.name += (f" with limit({limit})")
 
     def is_obstructed(self, timeseries, x1, x2, y1, y2):
         # check if any value between obstructs line of sight
@@ -163,6 +185,10 @@ class TimeseriesEdgeVisibilityConstraintsNatural(TimeseriesEdgeVisibilityConstra
             y > slope * x + offset
             for x, y in enumerate(timeseries[x1 + self.limit + 1: x2], start=x1 + self.limit + 1)
         )
+    
+    def get_name(self):
+        return self.name
+        
 
 
 class TimeseriesEdgeVisibilityConstraintsHorizontal(TimeseriesEdgeVisibilityConstraints):
@@ -204,9 +230,11 @@ class TimeseriesEdgeVisibilityConstraintsHorizontal(TimeseriesEdgeVisibilityCons
            https://doi.org/10.1038/s41598-018-23388-1
     """
     limit = 0
+    name = "Horizontal visibility strategy"
 
     def __init__(self, limit=0):
         self.limit = limit
+        self.name += (f" with limit({limit})")
 
     def is_obstructed(self, timeseries, x1, x2, y1, y2):
         # check if any value between obstructs line of sight
@@ -214,6 +242,9 @@ class TimeseriesEdgeVisibilityConstraintsHorizontal(TimeseriesEdgeVisibilityCons
             y > max(y1, y2)
             for x, y in enumerate(timeseries[x1 + self.limit + 1: x2], start=x1 + self.limit + 1)
         )
+    
+    def get_name(self):
+        return self.name
 
 
 class TimeseriesEdgeVisibilityConstraintsVisibilityAngle(TimeseriesEdgeVisibilityConstraints):
@@ -267,6 +298,9 @@ class TimeseriesEdgeVisibilityConstraintsVisibilityAngle(TimeseriesEdgeVisibilit
             visibility_angle = abs(self.visibility_angle)
 
         return angle < visibility_angle
+    
+    def get_name(self):
+        return (f" with angle({self.visibility_angle})")
 
 
 class EdgeAdditionStrategyUnweighted(EdgeAdditionStrategy):
