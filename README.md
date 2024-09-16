@@ -3,18 +3,18 @@
 TS2G<sup>2</sup> stands for "timeseries to graphs and back". The library implements a variety of strategies to convert timeseries into graphs, and convert graphs into sequences. Below, we provide a code snippet to generate a graph from timeseries:
     
     # load time series from a file
-    timegraph = model.Timeseries(CsvStock(some_file_path, "ColumnOfInterest").from_csv())\
+    timegraph = Timeseries(CsvStock(some_file_path, "ColumnOfInterest").from_csv())\
 
     # and preprocess the timeseries with multiple preprocessing strategies
-    .with_preprocessing(model.TimeseriesPreprocessingComposite()\
-        .add_strategy(model.TimeseriesPreprocessingSegmentation(60, 120))\
-        .add_strategy(model.TimeseriesPreprocessingSlidingWindow(5)))\
+    .with_preprocessing(TimeseriesPreprocessingComposite()\
+        .add_strategy(TimeseriesPreprocessingSegmentation(60, 120))\
+        .add_strategy(TimeseriesPreprocessingSlidingWindow(5)))\
 
     # then create a graph from the timeseries, following a particular strategy
-    .to_graph(tgs.BuildTimeseriesToGraphNaturalVisibilityStrategy().get_strategy())\
+    .to_graph(BuildTimeseriesToGraphNaturalVisibilityStrategy().get_strategy())\
 
     # link graphs that result from the same timeseries, but at different sliding window frames
-    .link(mgl.LinkGraphs().sliding_window())\
+    .link(LinkGraphs().sliding_window())\
 
     # and combine identical graphs that result from the abovementioned time windows into single nodes
     .combine_identical_nodes_slid_win()\
@@ -240,9 +240,9 @@ The package is a joint effort between the [Jožef Stefan Institute](https://www.
 
 Graphs are converted back to timeseries by sampling node values from the graph following different strategies. Below, we provide a short snippet of code, to illustrate how this can be done.
 
-    timegraph.to_sequence(model.ToSequenceVisitorSlidingWindow()\
-    .next_node_strategy(tts.StrategySelectNextNodeRandomlyFromFirstGraph())\
-    .next_value_strategy(tts.StrategyNextValueInNodeRandomForSlidingWindow().skip_every_x_steps(1))\
+    timegraph.to_sequence(ToSequenceVisitorSlidingWindow()\
+    .next_node_strategy(StrategySelectNextNodeRandomlyFromFirstGraph())\
+    .next_value_strategy(StrategyNextValueInNodeRandomForSlidingWindow().skip_every_x_steps(1))\
     .ts_length(50))\
     .draw_sequence()
 

@@ -4,18 +4,59 @@ nb_dir = os.path.split(os.getcwd())[0]
 if nb_dir not in sys.path:
     sys.path.append(nb_dir)
 
-from core.model import Timeseries, TimeseriesPreprocessing, TimeseriesPreprocessingSegmentation, TimeseriesPreprocessingSlidingWindow, TimeseriesPreprocessingComposite, TimeseriesView, TimeGraph, ToSequenceVisitorSlidingWindow, ToSequenceVisitor, ToSequenceVisitorOrdinalPartition, GraphEmbeddings, TimeseriesEmbeddings
+#os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+
+from core.model import Timeseries, TimeseriesPreprocessing, TimeseriesPreprocessingSegmentation, TimeseriesPreprocessingSlidingWindow, TimeseriesPreprocessingComposite, TimeseriesView, TimeGraph, ToSequenceVisitorSlidingWindow, ToSequenceVisitor, ToSequenceVisitorOrdinalPartition
 from tsg_io.input import CsvFile
 from from_graph.strategy_to_time_sequence import StrategyNextValueInNodeRandom, StrategyNextValueInNodeRandomForSlidingWindow, StrategyNextValueInNodeRoundRobin, StrategyNextValueInNodeRoundRobinForSlidingWindow, StrategySelectNextNodeRandomlyFromNeighboursAcrossGraphs, StrategySelectNextNodeRandomlyFromNeighboursFromFirstGraph, StrategySelectNextNodeRandomly, StrategySelectNextNodeRandomDegree, StrategySelectNextNodeRandomWithRestart, StrategyNextValueInNodeOrdinalPartition
 from to_graph.strategy_linking_graph import StrategyLinkingGraphByValueWithinRange, LinkNodesWithinGraph
 from to_graph.strategy_linking_multi_graphs import LinkGraphs
 from to_graph.strategy_to_graph import BuildTimeseriesToGraphNaturalVisibilityStrategy, BuildTimeseriesToGraphHorizontalVisibilityStrategy, BuildTimeseriesToGraphOrdinalPartition, BuildTimeseriesToGraphQuantile
+from embeddings.ts2g2_embeddings import EmbeddingRanking
+from embeddings.vectors import TimeSeriesEmbedding
+import numpy as np
+import networkx as nx
 
 amazon_path = os.path.join(os.getcwd(), "amazon", "AMZN.csv")
 apple_path = os.path.join(os.getcwd(), "apple", "APPLE.csv")
 
+print(CsvFile(amazon_path, "Close").from_csv().values)
+
+class GraphModel:
+    def __init__(self, vector_size):
+        self.vector_size = vector_size
+    
+    def predict(self, graph):
+        embedding = np.array(list(nx.eigenvector_centrality_numpy(graph)))
+        if(len(embedding) > self.vector_size):
+            embedding = embedding[:self.vector_size]
+        else:
+            num_zeros = self.vector_size - len(embedding)
+            embedding = np.pad(embedding, (0, num_zeros), mode='constant')
+        return embedding
 
 
+model_ts = TimeSeriesEmbedding(CsvFile(amazon_path, "Close").from_csv().values)\
+            .normalize_data()\
+            .train_lstm(vector_size = 20)
+
+model_graph = GraphModel(20)
+
+EmbeddingRanking(20)\
+    .set_embedding_models(model_ts, model_graph)\
+    .set_to_graph_strategies([BuildTimeseriesToGraphNaturalVisibilityStrategy(), BuildTimeseriesToGraphHorizontalVisibilityStrategy(), BuildTimeseriesToGraphOrdinalPartition(10, 5), BuildTimeseriesToGraphQuantile(4, 1)])\
+    .add_timeseries(Timeseries(CsvFile(amazon_path, "Close").from_csv()).with_preprocessing(TimeseriesPreprocessingSegmentation(100, 200)))\
+    .add_timeseries(Timeseries(CsvFile(amazon_path, "Close").from_csv()).with_preprocessing(TimeseriesPreprocessingSegmentation(300, 400)))\
+    .add_timeseries(Timeseries(CsvFile(amazon_path, "Close").from_csv()).with_preprocessing(TimeseriesPreprocessingSegmentation(500, 600)))\
+    .add_timeseries(Timeseries(CsvFile(amazon_path, "Close").from_csv()).with_preprocessing(TimeseriesPreprocessingSegmentation(700, 800)))\
+    .add_timeseries(Timeseries(CsvFile(amazon_path, "Close").from_csv()).with_preprocessing(TimeseriesPreprocessingSegmentation(900, 1000)))\
+    .embedding_ranking()\
+    .kendall_tau_correlation()
+
+
+
+
+"""
 timegraph_ordinal_partition = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
     .with_preprocessing(TimeseriesPreprocessingSegmentation(60, 120))\
     .add(Timeseries(CsvFile(amazon_path, "Close").from_csv())\
@@ -101,7 +142,7 @@ timegraph_4 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
     .draw("green")
 
 
-embedding = GraphEmbeddings([timegraph_1, timegraph_2, timegraph_3, timegraph_4, timegraph_ordinal_partition, timegraph_quantile], embedding_length=20)\
+embedding = GraphEmbeddings([timegraph_1, timegraph_2, timegraph_3, timegraph_4, timegraph_ordinal_partition, timegraph_quantile])\
         .get_graph_embedding()\
         .get_ranking()\
         .print_ranking()\
@@ -154,7 +195,7 @@ ts_ord_part = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
 ts_embedding = TimeseriesEmbeddings([ts_1], 20)\
         .get_embeddings()
 
-
+"""
 
 """
 

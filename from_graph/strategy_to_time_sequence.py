@@ -166,7 +166,6 @@ class StrategyNextValueInNodeOrdinalPartition(StrategyNextValueInNode):
         bins = bins[graph_index]
         tuple = data_node[1]['ordinal_pattern']
         tuple = list(tuple)
-        #TODO:look if this [0] is ok at the end
         chosen_bins = np.random.choice(len(frequencies), size=w, p=(frequencies/np.sum(frequencies)))
         chosen_values = [np.random.uniform(bins[bin_idx], bins[bin_idx + 1]) for bin_idx in chosen_bins]
         chosen_values = sorted(chosen_values, reverse=True)

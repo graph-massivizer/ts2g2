@@ -19,9 +19,9 @@ class TimeSeriesEmbedding:
             X.append(data[i:i + window_size])
         return np.array(X)
 
-    def train_lstm(self, epochs=20):
+    def train_lstm(self, epochs=20, vector_size = 20):
         model = Sequential([
-            LSTM(50, activation='tanh', input_shape=(self.window_size, 1), kernel_initializer='glorot_uniform',
+            LSTM(vector_size, activation='tanh', input_shape=(self.window_size, 1), kernel_initializer='glorot_uniform',
                  recurrent_initializer='orthogonal', bias_initializer='zeros'),
             Dense(1, activation='linear')
         ])
@@ -40,14 +40,14 @@ class TimeSeriesEmbedding:
 
         model.fit(self.X, self.X[:, -1], epochs=epochs, verbose=1, callbacks=[callback])
         self.encoder_model = Sequential([model.layers[0]])
-        return self
+        return self.encoder_model
 
     def get_embeddings(self):
         embeddings = self.encoder_model.predict(self.X)
         return embeddings
     
-    def normalize_data(dataset,column):
-        data = dataset[column].values
+    def normalize_data(self):
         scaler = MinMaxScaler()
-        return scaler.fit_transform(data.reshape(-1, 1)).flatten() 
+        self.data = scaler.fit_transform(self.data.reshape(-1, 1)).flatten() 
+        return self
     

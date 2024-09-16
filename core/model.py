@@ -379,132 +379,21 @@ class TimeGraph:
     def _get_w_tau(self):
         return self.w, self.tau
 
-class Embeddings:
+    def to_embedding(self, embedding_visitor):
+        self.embeddings = embedding_visitor.get_graph_embedding()
+        return self
+    
+    def get_embedding(self):
+        return self.embeddings
+
+
+class VisitorGraphEmbedding:
     def __init__(self):
-        pass
-
-class GraphEmbeddings(Embeddings):
-
-    def __init__(self, graphs, embedding_length = 0):
-        self.time_graphs = graphs
-        self.graphs = [None for i in range(len(graphs))]
-        for i in range(len(graphs)):
-            self.graphs[i] = graphs[i]._get_graph()
-        self.max_nodes = self._get_max_nodes()
-        self.vector_avg = np.array([0]*self.max_nodes)
-        self.embeddings = {}
-        self.embedding_length = embedding_length
+        self.embedding = None
     
-    def _get_max_nodes(self):
-        max = 0
-        for graph in self.graphs:
-            if(len(graph.nodes) > max):
-                max = len(graph.nodes)
-        return max
-    
-    def get_graph_embedding(self):
-        for i in range(len(self.graphs)):
-            embedding = np.array(list(nx.eigenvector_centrality_numpy(self.graphs[i]).values()))
-            num_zeros = self.max_nodes - len(embedding) if (self.max_nodes >= self.embedding_length) else self.embedding_length - len(embedding)
-            embedding = np.pad(embedding, (0, num_zeros), mode='constant')
-            if(self.embedding_length > 0 and self.embedding_length < self.max_nodes):
-                fft_coeffs = np.fft.fft(embedding)
-                embedding = np.abs(fft_coeffs[:self.embedding_length])
-            self.embeddings[self.time_graphs[i]._hash()] = embedding
-        
-        x = min(self.embedding_length, self.max_nodes)
-        for i in range(x):
-            avg_sum = 0
-            for hash in self.embeddings.keys():
-                avg_sum += self.embeddings[hash][i]/len(self.embeddings)
-            self.vector_avg[i] = avg_sum
-        
-        print(self.embeddings)
-        return self
-    
-    def get_ranking(self):
-        ranking = []
-        for embedding in self.embeddings.values():
-            rank = 0
-            for n in embedding:
-                rank += n*n
-            rank = np.sqrt(rank)
-            ranking.append(rank)
-
-        
-        self.ranking_dict = {}
-        for i in range(len(self.graphs)):
-            self.ranking_dict[self.time_graphs[i]._hash()] = ranking[i]
-        return self
-    
-    def print_ranking(self):
-        print(self.ranking_dict)
-        return self
-    
-    def get_cosine_distance(self, time_graph_1: TimeGraph, time_graph_2: TimeGraph):
-        hash_1 = time_graph_1._hash()
-        hash_2 = time_graph_2._hash()
-        vector_1 = self.embeddings[hash_1]
-        vector_2 = self.embeddings[hash_2]
-        dot_product = np.dot(vector_1, vector_2)
-        norm_1 = np.linalg.norm(vector_1)
-        norm_2 = np.linalg.norm(vector_2)
-        cosine_similarity = dot_product / (norm_1*norm_2)
-        print(1 - cosine_similarity)
-        return self
-    
-    def get_euclidean_distance(self, time_graph_1: TimeGraph, time_graph_2: TimeGraph):
-        hash_1 = time_graph_1._hash()
-        hash_2 = time_graph_2._hash()
-        vector_1 = self.embeddings[hash_1]
-        vector_2 = self.embeddings[hash_2]
-        distance = 0
-        for i in range(len(vector_1)):
-            distance += (vector_1[i]-vector_2[i])*(vector_1[i]-vector_2[i])
-        distance = np.sqrt(distance)
-        print(distance)
-        return self
-    
-    def rbo(self, time_graph_1: TimeGraph, time_graph_2: TimeGraph, p=0.9):
-        hash_1 = time_graph_1._hash()
-        hash_2 = time_graph_2._hash()
-        list1 = self.embeddings[hash_1]
-        list2 = self.embeddings[hash_2]
-
-        # tail recursive helper function
-        def helper(ret, i, d):
-            l1 = set(list1[:i]) if i < len(list1) else set(list1)
-            l2 = set(list2[:i]) if i < len(list2) else set(list2)
-            a_d = len(l1.intersection(l2))/i
-            term = math.pow(p, i) * a_d
-            if d == i:
-                return ret + term
-            return helper(ret + term, i + 1, d)
-        k = max(len(list1), len(list2))
-        x_k = len(set(list1).intersection(set(list2)))
-        summation = helper(0, 1, k)
-        return ((float(x_k)/k) * math.pow(p, k)) + ((1-p)/p * summation)
-
-
-class TimeseriesEmbeddings(Embeddings):
-    def __init__(self, timeseries, embedding_size):
-        self.timeseries = []
-        for ts in timeseries:
-            for ser in ts.get_ts():
-                self.timeseries.append(ser)
-        self.embedding_size = embedding_size
-        self.embeddings = []
-    
-    def get_embeddings(self):
-        for ts in self.timeseries:
-            x = ts
-            x = np.abs(fft(x, axis=1))
-            x = x[:, :self.embedding_size]
-            self.embeddings.append(x)
-        
-        print(self.embeddings)
-        return self
-
+    def get_graph_embedding(self, graph):
+        self.embedding = np.array(list(nx.eigenvector_centrality_numpy(graph)))
+        return self.embedding
 
 class ToSequenceVisitorMaster:
     """
@@ -718,6 +607,7 @@ class ToSequenceVisitor(ToSequenceVisitorMaster):
 
 
 class ToSequenceVisitorOrdinalPartition(ToSequenceVisitorMaster):
+    """Converts graphs made using ordinal partition mechanism back to timeseries"""
     def __init__(self):
         super().__init__()
         self.histogram_frequencies = None
