@@ -6,15 +6,15 @@ from scipy import stats
 
 
 class VisitorTimeseriesEmbeddingModel:
-    def __init__(self, model = None):
-        self.model = model
+    def __init__(self):
+        self.model = None
     
     def predict(self, timeseries):
         pass
 
 class VisitorGraphEmbeddingModel:
-    def __init__(self, model = None):
-        self.model = model
+    def __init__(self):
+        self.model = None
     
     def predict(self, graph):
         pass
@@ -47,7 +47,7 @@ class EmbeddingRanking:
         ts_id = self.id(ts)
         self.dictionaries[0][ts_id] = self.timeseries_model.predict(ts)
         for i in range(len(self.to_graph_methods)):
-            self.dictionaries[i+1][ts_id] = self.graph_model.predict(timeseries.to_graph(self.to_graph_methods[i].get_strategy())._get_graph())
+            self.dictionaries[i+1][ts_id] = self.graph_model.predict(timeseries.to_graph(self.to_graph_methods[i].get_strategy()))
         return self
     
     def embedding_ranking(self):
@@ -76,14 +76,109 @@ class EmbeddingRanking:
         return self
     
     def cosine_distance(self, vector):
-        print(vector)
-        print(len(vector[0]), len(vector))
-        print(self.base_vector)
         dot_product = np.dot(self.base_vector, vector)
         norm_1 = np.linalg.norm(self.base_vector)
         norm_2 = np.linalg.norm(vector)
         cosine_similarity = dot_product / (norm_1*norm_2)
         return 1 - cosine_similarity
+
+
+
+import networkx as nx
+import pandas as pd
+import numba
+import json
+from numpy import triu
+from scipy.linalg import get_blas_funcs
+from gensim.models.doc2vec import Doc2Vec, TaggedDocument
+
+# Kudos to the following pages, for clarifications:
+# https://stackoverflow.com/questions/66665981/should-i-split-sentences-in-a-document-for-doc2vec
+# https://medium.com/@klintcho/doc2vec-tutorial-using-gensim-ab3ac03d3a1
+
+
+class VisitorGraphEmbeddingModelDoc2Vec(VisitorGraphEmbeddingModel):
+    def __init__(self):
+        self.model = None
+    
+    def get_random_walks_for_graph(self, df_graph):
+        df = pd.DataFrame(df_graph.edges(data=True), columns = ['source', 'target', 'attributes'])
+        G = nx.from_pandas_edgelist(df, 'source', 'target')
+        walks = nx.generate_random_paths(G, sample_size=15, path_length=45)
+
+        str_walks = [[str(n) for n in walk] for walk in walks]
+        return str_walks
+
+    def train_model(self, graphs, embedding_size):
+        documents = []
+        for idx in range(len(graphs)):
+            source_target_dataframe = graphs[idx]._get_graph()
+            document = self.get_random_walks_for_graph(source_target_dataframe)
+            documents = documents + [document]
+
+        documents_gensim = []
+        for i, doc_walks in enumerate(documents):
+            for doc_walk in doc_walks:
+                documents_gensim = documents_gensim + [TaggedDocument(doc_walk, [i])]
+
+        model = Doc2Vec(documents_gensim, vector_size=embedding_size, window=3, min_count=1, workers=4)
+
+        model.train(documents_gensim, total_examples=model.corpus_count, epochs=model.epochs)
+        self.model = model
+        return self
+    
+    def predict(self, graph):
+        doc = self.get_random_walks_for_graph(graph._get_graph())
+        documents_gensim = []
+        for i, doc_walks in enumerate(doc):
+            documents_gensim = documents_gensim + [''.join(TaggedDocument(doc_walks, [i]).words)]
+        return self.model.infer_vector(documents_gensim)
+
+
+from embeddings.ts2vec.ts2vec import TS2Vec
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+import torch
+
+class VisitorTimeseriesEmbeddingModelTS2Vec(VisitorTimeseriesEmbeddingModel):
+    def __init__(self):
+        self.model = None
+
+
+    def train_model(self, timeseries, embedding_size, epoch = None):
+        train_data, test_data= train_test_split(timeseries, random_state=42)
+
+        scaler = StandardScaler()
+        if(len(train_data.shape) == 1):
+            train_data = train_data.to_frame()
+            train_data = scaler.fit_transform(train_data)
+
+        if(len(train_data.shape) == 2):
+            train_data = train_data.reshape(1, train_data.shape[0], train_data.shape[1])
+
+        self.model = TS2Vec(input_dims = 1, output_dims = embedding_size, device='cpu')
+
+        self.model.fit(train_data, n_epochs = epoch, verbose=True)
+        train_embeddings = self.model.encode(train_data)
+        return self
+    
+    def predict(self, timeseries):
+        while(isinstance(timeseries, list)):
+            timeseries = timeseries[0]
+        if(len(timeseries.shape) == 1):
+            timeseries = timeseries.to_frame()
+            scaler = StandardScaler()
+            timeseries = scaler.fit_transform(timeseries)
+        
+        if(len(timeseries.shape) == 2):
+            timeseries = timeseries.reshape(1, timeseries.shape[0], timeseries.shape[1])
+        x = self.model.encode(timeseries, encoding_window='full_series')
+        return x[0]
+
+
+
+
+
 
 
 

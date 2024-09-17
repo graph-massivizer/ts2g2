@@ -12,7 +12,7 @@ from from_graph.strategy_to_time_sequence import StrategyNextValueInNodeRandom, 
 from to_graph.strategy_linking_graph import StrategyLinkingGraphByValueWithinRange, LinkNodesWithinGraph
 from to_graph.strategy_linking_multi_graphs import LinkGraphs
 from to_graph.strategy_to_graph import BuildTimeseriesToGraphNaturalVisibilityStrategy, BuildTimeseriesToGraphHorizontalVisibilityStrategy, BuildTimeseriesToGraphOrdinalPartition, BuildTimeseriesToGraphQuantile
-from embeddings.ts2g2_embeddings import EmbeddingRanking
+from embeddings.ts2g2_embeddings import EmbeddingRanking, VisitorGraphEmbeddingModelDoc2Vec, VisitorTimeseriesEmbeddingModelTS2Vec
 from embeddings.vectors import TimeSeriesEmbedding
 import numpy as np
 import networkx as nx
@@ -20,43 +20,8 @@ import networkx as nx
 amazon_path = os.path.join(os.getcwd(), "amazon", "AMZN.csv")
 apple_path = os.path.join(os.getcwd(), "apple", "APPLE.csv")
 
-print(CsvFile(amazon_path, "Close").from_csv().values)
-
-class GraphModel:
-    def __init__(self, vector_size):
-        self.vector_size = vector_size
-    
-    def predict(self, graph):
-        embedding = np.array(list(nx.eigenvector_centrality_numpy(graph)))
-        if(len(embedding) > self.vector_size):
-            embedding = embedding[:self.vector_size]
-        else:
-            num_zeros = self.vector_size - len(embedding)
-            embedding = np.pad(embedding, (0, num_zeros), mode='constant')
-        return embedding
 
 
-model_ts = TimeSeriesEmbedding(CsvFile(amazon_path, "Close").from_csv().values)\
-            .normalize_data()\
-            .train_lstm(vector_size = 20)
-
-model_graph = GraphModel(20)
-
-EmbeddingRanking(20)\
-    .set_embedding_models(model_ts, model_graph)\
-    .set_to_graph_strategies([BuildTimeseriesToGraphNaturalVisibilityStrategy(), BuildTimeseriesToGraphHorizontalVisibilityStrategy(), BuildTimeseriesToGraphOrdinalPartition(10, 5), BuildTimeseriesToGraphQuantile(4, 1)])\
-    .add_timeseries(Timeseries(CsvFile(amazon_path, "Close").from_csv()).with_preprocessing(TimeseriesPreprocessingSegmentation(100, 200)))\
-    .add_timeseries(Timeseries(CsvFile(amazon_path, "Close").from_csv()).with_preprocessing(TimeseriesPreprocessingSegmentation(300, 400)))\
-    .add_timeseries(Timeseries(CsvFile(amazon_path, "Close").from_csv()).with_preprocessing(TimeseriesPreprocessingSegmentation(500, 600)))\
-    .add_timeseries(Timeseries(CsvFile(amazon_path, "Close").from_csv()).with_preprocessing(TimeseriesPreprocessingSegmentation(700, 800)))\
-    .add_timeseries(Timeseries(CsvFile(amazon_path, "Close").from_csv()).with_preprocessing(TimeseriesPreprocessingSegmentation(900, 1000)))\
-    .embedding_ranking()\
-    .kendall_tau_correlation()
-
-
-
-
-"""
 timegraph_ordinal_partition = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
     .with_preprocessing(TimeseriesPreprocessingSegmentation(60, 120))\
     .add(Timeseries(CsvFile(amazon_path, "Close").from_csv())\
@@ -72,14 +37,14 @@ timegraph_ordinal_partition = Timeseries(CsvFile(amazon_path, "Close").from_csv(
     .link(LinkGraphs().time_cooccurrence())\
     .add_edge(0,2)\
     .link(LinkNodesWithinGraph().seasonalities(4))\
-    .draw("purple")
+    #.draw("purple")
 
 
 timegraph_ordinal_partition.to_sequence(ToSequenceVisitorOrdinalPartition()\
     .next_node_strategy(StrategySelectNextNodeRandomWithRestart())\
     .next_value_strategy(StrategyNextValueInNodeOrdinalPartition())\
     .ts_length(100))\
-    .draw_sequence()
+    #.draw_sequence()
 
 
 
@@ -88,7 +53,7 @@ timegraph_quantile = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
     .to_graph(BuildTimeseriesToGraphQuantile(4, 1).get_strategy())\
     .add_edge(0,2)\
     .link(LinkNodesWithinGraph().seasonalities(4))\
-    .draw("grey")
+    #.draw("grey")
 
 
 timegraph_1 = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
@@ -97,7 +62,7 @@ timegraph_1 = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
     .add_edge(0,2)\
     .add_edge(13, 21, weight = 17)\
     .link(LinkNodesWithinGraph().by_value(StrategyLinkingGraphByValueWithinRange(2)).seasonalities(15))\
-    .draw("blue")
+    #.draw("blue")
 
 
 timegraph_2 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
@@ -107,7 +72,7 @@ timegraph_2 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
     .to_graph(BuildTimeseriesToGraphNaturalVisibilityStrategy().get_strategy())\
     .link(LinkGraphs().sliding_window())\
     .combine_identical_subgraphs()\
-    .draw("red")
+    #.draw("red")
 
 
 timegraph_3 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
@@ -120,7 +85,7 @@ timegraph_3 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
     .link(LinkGraphs().time_cooccurrence())\
     .link(LinkNodesWithinGraph().by_value(StrategyLinkingGraphByValueWithinRange(0.5)))\
     .combine_identical_nodes()\
-    .draw("brown")
+    #.draw("brown")
 
 
 timegraph_4 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
@@ -139,63 +104,46 @@ timegraph_4 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
     .link(LinkGraphs().sliding_window().time_cooccurrence())\
     .combine_identical_subgraphs()\
     .link(LinkNodesWithinGraph().seasonalities(15))\
-    .draw("green")
+    #.draw("green")
 
 
-embedding = GraphEmbeddings([timegraph_1, timegraph_2, timegraph_3, timegraph_4, timegraph_ordinal_partition, timegraph_quantile])\
-        .get_graph_embedding()\
-        .get_ranking()\
-        .print_ranking()\
-        .get_cosine_distance(timegraph_1, timegraph_3)\
-        .get_cosine_distance(timegraph_1, timegraph_4)\
-        .get_cosine_distance(timegraph_1, timegraph_2)\
-        .get_cosine_distance(timegraph_1, timegraph_ordinal_partition)\
-        .get_cosine_distance(timegraph_3, timegraph_4)\
-        .get_euclidean_distance(timegraph_1, timegraph_3)\
-        .get_euclidean_distance(timegraph_3, timegraph_ordinal_partition)\
-        .rbo(timegraph_4, timegraph_1)
 
-print(embedding)
+timegraph_6 = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
+    .with_preprocessing(TimeseriesPreprocessingSegmentation(4000, 4500))\
+    .to_graph(BuildTimeseriesToGraphNaturalVisibilityStrategy().with_limit(1).get_strategy())\
 
-ts_1 = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
-    .with_preprocessing(TimeseriesPreprocessingSegmentation(60, 90))
+timegraph_7 = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
+    .with_preprocessing(TimeseriesPreprocessingSegmentation(2000, 2100))\
+    .to_graph(BuildTimeseriesToGraphHorizontalVisibilityStrategy().with_limit(1).get_strategy())\
 
-ts_2 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
+timegraph_8 = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
     .with_preprocessing(TimeseriesPreprocessingComposite()\
-        .add(TimeseriesPreprocessingSegmentation(60, 120)))
+        .add(TimeseriesPreprocessingSegmentation(950, 1050))\
+        .add(TimeseriesPreprocessingSlidingWindow(10)))\
+    .to_graph(BuildTimeseriesToGraphHorizontalVisibilityStrategy().with_limit(1).get_strategy())\
+    .link(LinkGraphs().sliding_window())\
+    .combine_identical_subgraphs()\
 
-ts_3 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
-    .with_preprocessing(TimeseriesPreprocessingSegmentation(60, 90))\
-    .add(Timeseries(CsvFile(apple_path, "Close").from_csv())\
-        .with_preprocessing(TimeseriesPreprocessingSegmentation(90, 120)))\
-    .add(Timeseries(CsvFile(apple_path, "Close").from_csv())\
-        .with_preprocessing(TimeseriesPreprocessingSegmentation(150, 180)))
 
-ts_4 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
-    .with_preprocessing(TimeseriesPreprocessingComposite()\
-        .add(TimeseriesPreprocessingSegmentation(60, 110)))\
-    .add(Timeseries(CsvFile(apple_path, "Close").from_csv())\
-        .with_preprocessing(TimeseriesPreprocessingComposite()\
-            .add(TimeseriesPreprocessingSegmentation(120, 170)))\
-        .add(Timeseries(CsvFile(apple_path, "Close").from_csv())\
-            .with_preprocessing(TimeseriesPreprocessingComposite()\
-                    .add(TimeseriesPreprocessingSegmentation(190, 240)))))
+model_graph = VisitorGraphEmbeddingModelDoc2Vec().train_model([timegraph_1, timegraph_2, timegraph_3, timegraph_4, timegraph_6, timegraph_7, timegraph_8, timegraph_ordinal_partition, timegraph_quantile], 20)
+model_ts = VisitorTimeseriesEmbeddingModelTS2Vec().train_model(CsvFile(amazon_path, "Close").from_csv(), 20, epoch=20)
 
-ts_ord_part = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
-    .with_preprocessing(TimeseriesPreprocessingSegmentation(60, 120))\
-    .add(Timeseries(CsvFile(amazon_path, "Close").from_csv())\
-        .with_preprocessing(TimeseriesPreprocessingSegmentation(120, 180)))\
-    .add(Timeseries(CsvFile(amazon_path, "Close").from_csv())\
-        .with_preprocessing(TimeseriesPreprocessingSegmentation(500, 560)))\
-    .add(Timeseries(CsvFile(amazon_path, "Close").from_csv())\
-        .with_preprocessing(TimeseriesPreprocessingSegmentation(700, 760)))\
-    .add(Timeseries(CsvFile(amazon_path, "Close").from_csv())\
-        .with_preprocessing(TimeseriesPreprocessingSegmentation(1000, 1060)))\
+print(model_ts.predict(CsvFile(amazon_path, "Close").from_csv()[100:200]))
 
-ts_embedding = TimeseriesEmbeddings([ts_1], 20)\
-        .get_embeddings()
+EmbeddingRanking(20)\
+    .set_embedding_models(model_ts, model_graph)\
+    .set_to_graph_strategies([BuildTimeseriesToGraphNaturalVisibilityStrategy(), BuildTimeseriesToGraphHorizontalVisibilityStrategy(), BuildTimeseriesToGraphOrdinalPartition(10, 5), BuildTimeseriesToGraphQuantile(4, 1)])\
+    .add_timeseries(Timeseries(CsvFile(amazon_path, "Close").from_csv()).with_preprocessing(TimeseriesPreprocessingSegmentation(100, 200)))\
+    .add_timeseries(Timeseries(CsvFile(amazon_path, "Close").from_csv()).with_preprocessing(TimeseriesPreprocessingSegmentation(300, 400)))\
+    .add_timeseries(Timeseries(CsvFile(amazon_path, "Close").from_csv()).with_preprocessing(TimeseriesPreprocessingSegmentation(500, 600)))\
+    .add_timeseries(Timeseries(CsvFile(amazon_path, "Close").from_csv()).with_preprocessing(TimeseriesPreprocessingSegmentation(700, 800)))\
+    .add_timeseries(Timeseries(CsvFile(amazon_path, "Close").from_csv()).with_preprocessing(TimeseriesPreprocessingSegmentation(900, 1000)))\
+    .embedding_ranking()\
+    .kendall_tau_correlation()
 
-"""
+
+
+
 
 """
 
