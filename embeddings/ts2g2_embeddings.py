@@ -60,8 +60,8 @@ class EmbeddingRanking:
             for vector in embeddings:
                 distances.append(self.cosine_distance(vector))
             
-            sorted_pairs = sorted(zip(ids, distances))
-            sorted_ids, sorted_distances = zip(*sorted_pairs)
+            sorted_pairs = sorted(zip(distances, ids))
+            sorted_distances, sorted_ids = zip(*sorted_pairs)
             sorted_ids = list(sorted_ids)
             self.ranking.append(sorted_ids)
 

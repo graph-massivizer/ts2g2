@@ -128,8 +128,6 @@ timegraph_8 = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
 model_graph = VisitorGraphEmbeddingModelDoc2Vec().train_model([timegraph_1, timegraph_2, timegraph_3, timegraph_4, timegraph_6, timegraph_7, timegraph_8, timegraph_ordinal_partition, timegraph_quantile], 20)
 model_ts = VisitorTimeseriesEmbeddingModelTS2Vec().train_model(CsvFile(amazon_path, "Close").from_csv(), 20, epoch=20)
 
-print(model_ts.predict(CsvFile(amazon_path, "Close").from_csv()[100:200]))
-
 EmbeddingRanking(20)\
     .set_embedding_models(model_ts, model_graph)\
     .set_to_graph_strategies([BuildTimeseriesToGraphNaturalVisibilityStrategy(), BuildTimeseriesToGraphHorizontalVisibilityStrategy(), BuildTimeseriesToGraphOrdinalPartition(10, 5), BuildTimeseriesToGraphQuantile(4, 1)])\
