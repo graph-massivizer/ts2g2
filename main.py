@@ -1,7 +1,7 @@
 from core.model import TimeseriesArrayStream
 from core.model_previous import Timeseries
 from generation.strategies import RandomWalkWithRestartSequenceGenerationStrategy
-from timeseries.strategies import TimeseriesToGraphStrategy, TimeseriesEdgeVisibilityConstraintsHorizontal, TimeseriesEdgeVisibilityConstraintsNatural, EdgeWeightingStrategyNull
+from to_graph.strategies import TimeseriesToGraphStrategy, TimeseriesEdgeVisibilityConstraintsHorizontal, TimeseriesEdgeVisibilityConstraintsNatural, EdgeWeightingStrategyNull
 import networkx as nx
 import matplotlib.pyplot as plt
 

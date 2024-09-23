@@ -3,12 +3,12 @@
 TS2G<sup>2</sup> stands for "timeseries to graphs and back". The library implements a variety of strategies to convert timeseries into graphs, and convert graphs into sequences. Below, we provide a code snippet to generate a graph from timeseries:
     
     # load time series from a file
-    timegraph = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
+    timegraph = Timeseries(CsvStock(some_file_path, "ColumnOfInterest").from_csv())\
 
     # and preprocess the timeseries with multiple preprocessing strategies
     .with_preprocessing(TimeseriesPreprocessingComposite()\
-        .add(TimeseriesPreprocessingSegmentation(60, 120))\
-        .add(TimeseriesPreprocessingSlidingWindow(5)))\
+        .add_strategy(TimeseriesPreprocessingSegmentation(60, 120))\
+        .add_strategy(TimeseriesPreprocessingSlidingWindow(5)))\
 
     # then create a graph from the timeseries, following a particular strategy
     .to_graph(BuildTimeseriesToGraphNaturalVisibilityStrategy().get_strategy())\
@@ -17,10 +17,10 @@ TS2G<sup>2</sup> stands for "timeseries to graphs and back". The library impleme
     .link(LinkGraphs().sliding_window())\
 
     # and combine identical graphs that result from the abovementioned time windows into single nodes
-    .combine_identical_subgraphs()\
+    .combine_identical_nodes_slid_win()\
 
     # finally, draw the graph
-    .draw("blue")
+    .draw("red")
 
 For a more detailed example, look at the [Amazon stocks demo](https://github.com/graph-massivizer/ts2g2/blob/main/tutorials/demo-ts2g2.ipynb).
 

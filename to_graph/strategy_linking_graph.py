@@ -1,5 +1,9 @@
 import functools
 
+class StrategyNotImplementedError(Exception):
+    """Custom exception for strategies that are not implemented."""
+    pass
+
 def compare(x, y):
     return x.get_strategy_precedence() - y.get_strategy_precedence()
 
@@ -24,7 +28,7 @@ class StrategyLinkingGraph:
     def get_strategy_precedence(self):
         return self.strategy_precedence
 
-    def apply(self):
+    def apply(self, is_implemented):
         pass
 
 class StrategyLinkingGraphBySeasonalities(StrategyLinkingGraph):
@@ -40,7 +44,7 @@ class StrategyLinkingGraphBySeasonalities(StrategyLinkingGraph):
         super().__init__(None, 0)
         self.period = period
 
-    def apply(self):
+    def apply(self, is_implemented):
         for i in range(len(self.graph.nodes) - self.period):
             self.graph.add_edge(list(self.graph.nodes)[i], list(self.graph.nodes)[i+self.period], intergraph_binding='seasonality')
         return self.graph
@@ -52,7 +56,7 @@ class StrategyLinkingGraphByValue(StrategyLinkingGraph):
         super().__init__(graph, 1)
         self.attribute = 'value'
 
-    def apply(self):
+    def apply(self, is_implemented):
         pass
 
 
@@ -70,7 +74,9 @@ class StrategyLinkingGraphByValueWithinRange(StrategyLinkingGraphByValue):
         super().__init__(None)
         self.allowed_difference = allowed_difference
 
-    def apply(self):
+    def apply(self, is_implemented):
+        if not is_implemented:
+            raise StrategyNotImplementedError(f"This function is not yet implemented for this type of graph.")
         for node_11, node_12 in zip(self.graph.nodes(data=True), self.graph.nodes):
             for node_21, node_22 in zip(self.graph.nodes(data=True), self.graph.nodes):
                 if  abs(node_11[1][self.attribute][0] - node_21[1][self.attribute][0]) < self.allowed_difference and node_12 != node_22:
@@ -85,15 +91,18 @@ class LinkNodesWithinGraph:
         self.graph = None
         self.attribute = 'value'
         self.command_array = []
+        self.is_implemented = True
 
     def link(self, graph):
         self.graph = graph._get_graph()
+        self.is_implemented = graph.get_is_implemented()
+
 
         self.command_array.sort(key=functools.cmp_to_key(compare))
 
         for strat in self.command_array:
             strat.set_graph(self.graph)
-            self.graph = strat.apply()
+            self.graph = strat.apply(self.is_implemented)
 
         return self.graph
 

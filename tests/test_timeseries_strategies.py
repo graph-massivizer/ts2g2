@@ -3,8 +3,8 @@ from unittest.mock import Mock
 
 from core import model
 from core.model import TimeseriesArrayStream
-from timeseries.strategies import TimeseriesGraph
-from timeseries.strategies import TimeseriesToGraphStrategy
+from to_graph.strategies import TimeseriesGraph
+from to_graph.strategies import TimeseriesToGraphStrategy
 
 class TestToGraphMethod(unittest.TestCase):
 

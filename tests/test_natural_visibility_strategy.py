@@ -1,6 +1,6 @@
 import unittest
 
-from timeseries.strategies import TimeseriesEdgeVisibilityConstraintsNatural
+from to_graph.strategies import TimeseriesEdgeVisibilityConstraintsNatural
 
 
 class TestTimeseriesEdgeVisibilityConstraintsNatural(unittest.TestCase):

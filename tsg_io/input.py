@@ -1,6 +1,7 @@
 import pandas as pd
 import xml.etree.ElementTree as ET
 import core.model as sg
+from sktime.datasets import load_from_tsfile_to_dataframe
 
 class CsvRead:
     """Extracts data from a csv file.""" 
@@ -32,6 +33,26 @@ class CsvFile(CsvRead):
         timeseries.set_index("Date", inplace=True)
         timeseries = timeseries[self.y_column]
         return timeseries
+
+class TsRead:
+    def __init__(self):
+        pass
+
+    def from_ts(self):
+        pass
+
+class TsFile(TsRead):
+    def __init__(self, path):
+        self.path = path
+    
+    def from_ts(self):
+        X, y = load_from_tsfile_to_dataframe(self.path)
+        X = X['dim_0']
+        return X[0]
+
+
+
+
 
 class XmlRead:
     """Extracts data from an xml file."""
