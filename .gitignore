@@ -170,3 +170,11 @@ RELEASE.md
 *.xml
 fundimentials
 fundamential
+
+tutorials/abnormal_heartbeat
+tutorials/ACSF1
+tutorials/adiac
+tutorials/dodger_loop_weekend
+tutorials/embedding_models
+tutorials/kendall_tau_results
+

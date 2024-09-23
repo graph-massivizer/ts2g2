@@ -28,9 +28,14 @@ class EmbeddingRanking:
         self.graph_model = None
         self.embedding_length = embedding_length
         self.base_vector = [0.5 for i in range(embedding_length)]
+        self.poskus = 0
+        self.abeceda = "abcdefghijklmonpqrstuvwxyz"
 
     def id(self, timeseries):
-        return hashlib.md5(str(timeseries).encode()).hexdigest()
+        x = self.abeceda[self.poskus]
+        self.poskus += 1
+        return x
+        #return hashlib.md5(str(timeseries).encode()).hexdigest()
     
     def set_to_graph_strategies(self, array):
         self.to_graph_methods = array
@@ -64,16 +69,25 @@ class EmbeddingRanking:
             sorted_distances, sorted_ids = zip(*sorted_pairs)
             sorted_ids = list(sorted_ids)
             self.ranking.append(sorted_ids)
-
+        """
+        k = 1
+        for j in range(len(self.ranking[0])):
+            print(f"{k}:", end = " ")
+            k+=1
+            for i in range(len(self.ranking)):
+                print(f"{self.ranking[i][j]}", end = " | ")
+            print()
+        """
+                
         return self 
     
     def kendall_tau_correlation(self):
         correlation = []
         for i in range(len(self.to_graph_methods)):
             correlation.append(stats.kendalltau(self.ranking[0], self.ranking[i+1]).statistic)
-        for i in range(len(self.to_graph_methods)):
-            print(f"{self.to_graph_methods[i].get_strategy()._get_name()}: {correlation[i]}")
-        return self
+        """for i in range(len(self.to_graph_methods)):
+            print(f"{self.to_graph_methods[i].get_strategy()._get_name()}: {correlation[i]}")"""
+        return correlation
     
     def cosine_distance(self, vector):
         dot_product = np.dot(self.base_vector, vector)

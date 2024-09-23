@@ -7,28 +7,42 @@ if nb_dir not in sys.path:
 #os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
 from core.model import Timeseries, TimeseriesPreprocessing, TimeseriesPreprocessingSegmentation, TimeseriesPreprocessingSlidingWindow, TimeseriesPreprocessingComposite, TimeseriesView, TimeGraph, ToSequenceVisitorSlidingWindow, ToSequenceVisitor, ToSequenceVisitorOrdinalPartition
-from tsg_io.input import CsvFile
+from tsg_io.input import CsvFile, TsFile
 from from_graph.strategy_to_time_sequence import StrategyNextValueInNodeRandom, StrategyNextValueInNodeRandomForSlidingWindow, StrategyNextValueInNodeRoundRobin, StrategyNextValueInNodeRoundRobinForSlidingWindow, StrategySelectNextNodeRandomlyFromNeighboursAcrossGraphs, StrategySelectNextNodeRandomlyFromNeighboursFromFirstGraph, StrategySelectNextNodeRandomly, StrategySelectNextNodeRandomDegree, StrategySelectNextNodeRandomWithRestart, StrategyNextValueInNodeOrdinalPartition
 from to_graph.strategy_linking_graph import StrategyLinkingGraphByValueWithinRange, LinkNodesWithinGraph
 from to_graph.strategy_linking_multi_graphs import LinkGraphs
 from to_graph.strategy_to_graph import BuildTimeseriesToGraphNaturalVisibilityStrategy, BuildTimeseriesToGraphHorizontalVisibilityStrategy, BuildTimeseriesToGraphOrdinalPartition, BuildTimeseriesToGraphQuantile
 from embeddings.ts2g2_embeddings import EmbeddingRanking, VisitorGraphEmbeddingModelDoc2Vec, VisitorTimeseriesEmbeddingModelTS2Vec
-from embeddings.vectors import TimeSeriesEmbedding
 import numpy as np
 import networkx as nx
+import joblib
+import pandas as pd
 
 amazon_path = os.path.join(os.getcwd(), "amazon", "AMZN.csv")
 apple_path = os.path.join(os.getcwd(), "apple", "APPLE.csv")
+abnormalHeartbeat_path = os.path.join(os.getcwd(), "abnormal_heartbeat", "AbnormalHeartbeat_TEST.ts")
+acsf1_path = os.path.join(os.getcwd(), "ACSF1", "ACSF1_TEST.ts")
+adiac_path = os.path.join(os.getcwd(), "adiac", "Adiac_TEST.ts")
+dodger_loop_weekend_path = os.path.join(os.getcwd(), "dodger_loop_weekend", "DodgerLoopWeekend_TEST.ts")
 
 
 
-timegraph_ordinal_partition = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
+
+timegraph_1 = Timeseries(TsFile(abnormalHeartbeat_path).from_ts())\
+    .with_preprocessing(TimeseriesPreprocessingSegmentation(60, 90))\
+    .to_graph(BuildTimeseriesToGraphNaturalVisibilityStrategy().with_limit(1).get_strategy())\
+    .add_edge(0,2)\
+    .add_edge(13, 21, weight = 17)\
+    .link(LinkNodesWithinGraph().by_value(StrategyLinkingGraphByValueWithinRange(2)).seasonalities(15))\
+    #.draw("blue")
+
+timegraph_ordinal_partition = Timeseries(TsFile(abnormalHeartbeat_path).from_ts())\
     .with_preprocessing(TimeseriesPreprocessingSegmentation(60, 120))\
-    .add(Timeseries(CsvFile(amazon_path, "Close").from_csv())\
+    .add(Timeseries(TsFile(abnormalHeartbeat_path).from_ts())\
         .with_preprocessing(TimeseriesPreprocessingSegmentation(120, 180)))\
-    .add(Timeseries(CsvFile(amazon_path, "Close").from_csv())\
+    .add(Timeseries(TsFile(abnormalHeartbeat_path).from_ts())\
         .with_preprocessing(TimeseriesPreprocessingSegmentation(500, 560)))\
-    .add(Timeseries(CsvFile(amazon_path, "Close").from_csv())\
+    .add(Timeseries(TsFile(abnormalHeartbeat_path).from_ts())\
         .with_preprocessing(TimeseriesPreprocessingSegmentation(700, 760)))\
     .add(Timeseries(CsvFile(amazon_path, "Close").from_csv())\
         .with_preprocessing(TimeseriesPreprocessingSegmentation(1000, 1060)))\
@@ -39,13 +53,13 @@ timegraph_ordinal_partition = Timeseries(CsvFile(amazon_path, "Close").from_csv(
     .link(LinkNodesWithinGraph().seasonalities(4))\
     #.draw("purple")
 
-
+"""
 timegraph_ordinal_partition.to_sequence(ToSequenceVisitorOrdinalPartition()\
     .next_node_strategy(StrategySelectNextNodeRandomWithRestart())\
     .next_value_strategy(StrategyNextValueInNodeOrdinalPartition())\
     .ts_length(100))\
     #.draw_sequence()
-
+"""
 
 
 timegraph_quantile = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
@@ -54,15 +68,6 @@ timegraph_quantile = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
     .add_edge(0,2)\
     .link(LinkNodesWithinGraph().seasonalities(4))\
     #.draw("grey")
-
-
-timegraph_1 = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
-    .with_preprocessing(TimeseriesPreprocessingSegmentation(60, 90))\
-    .to_graph(BuildTimeseriesToGraphNaturalVisibilityStrategy().with_limit(1).get_strategy())\
-    .add_edge(0,2)\
-    .add_edge(13, 21, weight = 17)\
-    .link(LinkNodesWithinGraph().by_value(StrategyLinkingGraphByValueWithinRange(2)).seasonalities(15))\
-    #.draw("blue")
 
 
 timegraph_2 = Timeseries(CsvFile(apple_path, "Close").from_csv())\
@@ -124,20 +129,61 @@ timegraph_8 = Timeseries(CsvFile(amazon_path, "Close").from_csv())\
     .link(LinkGraphs().sliding_window())\
     .combine_identical_subgraphs()\
 
+path = TsFile(abnormalHeartbeat_path).from_ts()
+
 
 model_graph = VisitorGraphEmbeddingModelDoc2Vec().train_model([timegraph_1, timegraph_2, timegraph_3, timegraph_4, timegraph_6, timegraph_7, timegraph_8, timegraph_ordinal_partition, timegraph_quantile], 20)
-model_ts = VisitorTimeseriesEmbeddingModelTS2Vec().train_model(CsvFile(amazon_path, "Close").from_csv(), 20, epoch=20)
+model_ts = VisitorTimeseriesEmbeddingModelTS2Vec().train_model(path, 20, epoch=20)
 
-EmbeddingRanking(20)\
-    .set_embedding_models(model_ts, model_graph)\
-    .set_to_graph_strategies([BuildTimeseriesToGraphNaturalVisibilityStrategy(), BuildTimeseriesToGraphHorizontalVisibilityStrategy(), BuildTimeseriesToGraphOrdinalPartition(10, 5), BuildTimeseriesToGraphQuantile(4, 1)])\
-    .add_timeseries(Timeseries(CsvFile(amazon_path, "Close").from_csv()).with_preprocessing(TimeseriesPreprocessingSegmentation(100, 200)))\
-    .add_timeseries(Timeseries(CsvFile(amazon_path, "Close").from_csv()).with_preprocessing(TimeseriesPreprocessingSegmentation(300, 400)))\
-    .add_timeseries(Timeseries(CsvFile(amazon_path, "Close").from_csv()).with_preprocessing(TimeseriesPreprocessingSegmentation(500, 600)))\
-    .add_timeseries(Timeseries(CsvFile(amazon_path, "Close").from_csv()).with_preprocessing(TimeseriesPreprocessingSegmentation(700, 800)))\
-    .add_timeseries(Timeseries(CsvFile(amazon_path, "Close").from_csv()).with_preprocessing(TimeseriesPreprocessingSegmentation(900, 1000)))\
-    .embedding_ranking()\
-    .kendall_tau_correlation()
+
+
+
+
+joblib.dump(model_graph, "embedding_models/graph_model_abnormal_heartbeat.joblib")
+joblib.dump(model_ts, "embedding_models/timeseries_model_abnormal_heartbeat.joblib")
+
+
+"""
+model_graph = joblib.load("embedding_models/graph_model.joblib")
+model_ts = joblib.load("embedding_models/timeseries_model.joblib")
+"""
+
+
+
+
+data = {'run':[], 'natural_visibility':[], 'horizontal_visibility':[], 'ordinal_partition':[], 'quantile':[]}
+    
+i = 1
+while i <= 5:
+    print(i)
+
+    x = EmbeddingRanking(20)\
+        .set_embedding_models(model_ts, model_graph)\
+        .set_to_graph_strategies([BuildTimeseriesToGraphNaturalVisibilityStrategy(), BuildTimeseriesToGraphHorizontalVisibilityStrategy(), BuildTimeseriesToGraphOrdinalPartition(10, 5), BuildTimeseriesToGraphQuantile(4, 1)])\
+        .add_timeseries(Timeseries(path).with_preprocessing(TimeseriesPreprocessingSegmentation(100, 200)))\
+        .add_timeseries(Timeseries(path).with_preprocessing(TimeseriesPreprocessingSegmentation(300, 400)))\
+        .add_timeseries(Timeseries(path).with_preprocessing(TimeseriesPreprocessingSegmentation(500, 600)))\
+        .add_timeseries(Timeseries(path).with_preprocessing(TimeseriesPreprocessingSegmentation(700, 800)))\
+        .add_timeseries(Timeseries(path).with_preprocessing(TimeseriesPreprocessingSegmentation(900, 1000)))\
+        .add_timeseries(Timeseries(path).with_preprocessing(TimeseriesPreprocessingSegmentation(200, 350)))\
+        .add_timeseries(Timeseries(path).with_preprocessing(TimeseriesPreprocessingSegmentation(550, 680)))\
+        .add_timeseries(Timeseries(path).with_preprocessing(TimeseriesPreprocessingSegmentation(30, 80)))\
+        .add_timeseries(Timeseries(path).with_preprocessing(TimeseriesPreprocessingSegmentation(0, 300)))\
+        .add_timeseries(Timeseries(path).with_preprocessing(TimeseriesPreprocessingSegmentation(1100, 1250)))\
+        .embedding_ranking()\
+        .kendall_tau_correlation()
+    data['run'].append(i)
+    i+=1
+    data['natural_visibility'].append(x[0])
+    data["horizontal_visibility"].append(x[1])
+    data["ordinal_partition"].append(x[2])
+    data["quantile"].append(x[3])
+
+df = pd.DataFrame.from_dict(data)
+average_values = df.mean()
+print(average_values)
+df.to_csv('kendall_tau_results/apple_kendall_tau', index=False)
+
 
 
 
