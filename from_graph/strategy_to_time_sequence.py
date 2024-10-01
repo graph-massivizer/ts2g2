@@ -32,7 +32,6 @@ class StrategyNextValueInNode:
     def get_name(self):
         pass
 
-
 class StrategyNextValueInNodeRandom(StrategyNextValueInNode):
     """Chooses next value in selected node randomly."""
     def __init__(self):
@@ -45,7 +44,6 @@ class StrategyNextValueInNodeRandom(StrategyNextValueInNode):
 
     def get_name(self):
         return "random"
-
 
 class StrategyNextValueInNodeRandomForSlidingWindow(StrategyNextValueInNode):
     """Chooses next value in selected node randomly in graph made with sliding window mechanism."""
@@ -64,7 +62,6 @@ class StrategyNextValueInNodeRandomForSlidingWindow(StrategyNextValueInNode):
     def get_name(self):
         return "random"
 
-
 class StrategyNextValueInNodeRoundRobin(StrategyNextValueInNode):
     """Chooses next value in selected node sequentially, in the same order as they were saved."""
     def __init__(self):
@@ -81,7 +78,6 @@ class StrategyNextValueInNodeRoundRobin(StrategyNextValueInNode):
 
     def get_name(self):
         return "round robin"
-
 
 class StrategyNextValueInNodeRoundRobinForSlidingWindow(StrategyNextValueInNode):
     """Chooses next value in selected node sequentially for graph made with sliding window mechanism, in the same order as they were saved."""
@@ -102,7 +98,6 @@ class StrategyNextValueInNodeRoundRobinForSlidingWindow(StrategyNextValueInNode)
 
     def get_name(self):
         return "round robin"
-
 
 class StrategyNextValueInNodeOrdinalPartition(StrategyNextValueInNode):
     def __init__(self):
@@ -177,8 +172,34 @@ class StrategyNextValueInNodeOrdinalPartition(StrategyNextValueInNode):
     def get_name(self):
         return "ordinal partition"
 
+class StrategyNextValueInNodeQuantileRandom(StrategyNextValueInNode):
+    
+    def __init__(self):
+        super().__init__()
+    
+    def append(self, sequence, node, bins, values):
+        quantile = node[1]["order"]
+        next_value = np.random.uniform(bins[quantile], bins[quantile+1])
+        sequence.append(next_value)
+        return sequence
 
 
+    def get_name(self):
+        return "quantile random"
+    
+class StrategyNextValueInNodeQuantile(StrategyNextValueInNode):
+
+    def __init__(self):
+        super().__init__()
+    
+    def append(self, sequence, node, bins, values):
+        quantile = node[1]["order"]
+        next_value = random.choice(values[quantile])
+        sequence.append(next_value)
+        return sequence
+
+    def get_name(self):
+        return "quantile"
 
 class StrategySelectNextNode:
     """
@@ -217,7 +238,6 @@ class StrategySelectNextNode:
     def get_name(self):
         pass
 
-
 class StrategySelectNextNodeRandomlyFromNeighboursAcrossGraphs(StrategySelectNextNode):
     """Walks through all graphs in a multivariate graph and chooses next node randomly."""
     def __init__(self):
@@ -234,7 +254,6 @@ class StrategySelectNextNodeRandomlyFromNeighboursAcrossGraphs(StrategySelectNex
     def get_name(self):
         return "walkthrough all graphs randomly from neighbours"
 
-
 class StrategySelectNextNodeRandomlyFromNeighboursFromFirstGraph(StrategySelectNextNode):
     """Walks through first graph and chooses next node randomly."""
     def __init__(self):
@@ -249,7 +268,6 @@ class StrategySelectNextNodeRandomlyFromNeighboursFromFirstGraph(StrategySelectN
 
     def get_name(self):
         return "walkthrough one graph randomly from neighbours"
-
 
 class StrategySelectNextNodeRandomly(StrategySelectNextNode):
     """Randomly chooses next node from all nodes of the graph."""
@@ -286,7 +304,6 @@ class StrategySelectNextNodeRandomDegree(StrategySelectNextNode):
     def get_name(self):
         return "Random degree walkthrough the nodes"
     
-
 class StrategySelectNextNodeRandomWithRestart(StrategySelectNextNode):
     """Randomly chooses next node with 15% chance of choosing the first node."""
     def __init__(self):

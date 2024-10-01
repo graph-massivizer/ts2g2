@@ -1,6 +1,6 @@
 from deprecated import deprecated
 from from_graph.strategy_to_time_sequence import StrategyNextValueInNode
-import to_graph.strategy_linking_graph as gs
+from to_graph.strategy_linking_graph import LinkNodesWithinGraph
 from from_graph.strategy_to_time_sequence import StrategySelectNextNode
 
 import matplotlib.pyplot as plt
@@ -8,12 +8,11 @@ import networkx as nx
 import hashlib
 import numpy as np
 
-import to_graph.strategy_linking_multi_graphs as mgl
+from to_graph.strategy_linking_multi_graphs import LinkGraphs
 import to_graph.strategy_to_graph
 from to_graph.strategy_to_graph import BuildStrategyForTimeseriesToGraph
 import copy
 import math
-from scipy.fft import fft
 
 
 class StrategyNotImplementedError(Exception):
@@ -142,6 +141,8 @@ class TimeseriesView:
         self.w = 1
         self.tau = 1
         self.is_implemented = True
+        self.quantiles = None
+        self.quantile_values = None
 
     def get_ts(self):
         return self.ts
@@ -152,8 +153,12 @@ class TimeseriesView:
             self.ts.append(time_ser)
         return self
 
-
     def to_graph(self, strategy: to_graph.strategy_to_graph):
+        pool = ["#000000", "#101010", "#202020", "#303030", "#404040", "#505050", "#606060", "#707070", "#808080", "#909090", "#a0a0a0", "#b0b0b0", "#c0c0c0", "#d0d0d0", "#e0e0e0", "#f0f0f0"]
+        num = math.floor(16/len(self.ts))
+        if len(self.ts) > 16:
+            num = 1
+        color_counter = 0
         self.w, self.tau = strategy._get_w_tau()
         for ts in self.ts:
             graph_dict = {}
@@ -174,6 +179,12 @@ class TimeseriesView:
                 mapping = {node: f"{hash}_{node}" for node in g.nodes}
                 g = nx.relabel_nodes(g, mapping)
 
+                nx.set_node_attributes(g, pool[color_counter], "color")
+                color_counter += num
+                if color_counter > 15:
+                    color_counter = 0
+                
+
                 nx.set_edge_attributes(g, strategy._get_name(), "strategy")
                 graph_dict[self._hash(g) + f"_{counter}"] = g
                 order.append(self._hash(g) + f"_{counter}")
@@ -186,14 +197,16 @@ class TimeseriesView:
             self.graphs.append(graph_dict)
             self.graph_order.append(order)
         
+        self.quantiles, self.quantile_values = strategy._get_bins()
+        
         if (len(self.ts) == 1 and len(self.ts[0]) == 1):
-            return TimeGraph(self.graph, graphs = self.graphs[0], is_implemented=strategy._has_implemented_to_ts(), histogram_frequencies = self.histogram_frequencies, histogram_bins = self.histogram_bins, w = self.w, tau = self.tau)
+            return TimeGraph(self.graph, graphs = self.graphs[0], is_implemented=strategy._has_implemented_to_ts(), histogram_frequencies = self.histogram_frequencies, histogram_bins = self.histogram_bins, w = self.w, tau = self.tau, quantiles = self.quantiles, quantile_values=self.quantile_values)
         else:
             self.is_implemented = strategy._has_implemented_to_ts()
             return self
 
-    def link(self, link_strategy: mgl.LinkGraphs):
-        return TimeGraph(link_strategy.link(self.graphs, self.graph_order), graphs = self.graphs, is_implemented=self.is_implemented, histogram_frequencies = self.histogram_frequencies, histogram_bins = self.histogram_bins, w = self.w, tau = self.tau)
+    def link(self, link_strategy: LinkGraphs):
+        return TimeGraph(link_strategy.link(self.graphs, self.graph_order, self.ts), graphs = self.graphs, is_implemented=self.is_implemented, histogram_frequencies = self.histogram_frequencies, histogram_bins = self.histogram_bins, w = self.w, tau = self.tau, quantiles = self.quantiles, quantile_values=self.quantile_values)
 
     def _get_graphs(self):
         return self.graphs
@@ -229,7 +242,8 @@ class TimeGraph:
     - `graph`: object networkx.Graph
     
     """
-    def __init__(self, graph, graphs = None, is_implemented = True, histogram_frequencies = None, histogram_bins = None, w = 1, tau = 1):
+    
+    def __init__(self, graph, graphs = None, is_implemented = True, histogram_frequencies = None, histogram_bins = None, w = 1, tau = 1, quantiles = None, quantile_values = None):
         self.graph = graph
         self.orig_graph = None
         self.graphs = graphs
@@ -242,6 +256,8 @@ class TimeGraph:
         self.w = w
         self.tau = tau
         self.embeddings = None
+        self.quantiles = quantiles
+        self.quantile_values = quantile_values
 
     def get_is_implemented(self):
         return self.is_implemented
@@ -255,12 +271,12 @@ class TimeGraph:
     def add_edge(self, node_1, node_2, weight=None):
         """Adds edge between node_1 and node_2."""
         if weight == None:
-            self.graph.add_edge(list(self.graph.nodes)[node_1], list(self.graph.nodes)[node_2])
+            self.graph.add_edge(list(self.graph.nodes)[node_1], list(self.graph.nodes)[node_2], color = "#66ffff")
         else:
-            self.graph.add_edge(list(self.graph.nodes)[node_1], list(self.graph.nodes)[node_2], weight = weight)
+            self.graph.add_edge(list(self.graph.nodes)[node_1], list(self.graph.nodes)[node_2], weight = weight, color = "#66ffff")
         return self
 
-    def link(self, link_strategy: gs.LinkNodesWithinGraph):
+    def link(self, link_strategy: LinkNodesWithinGraph):
         """Links nodes based on link_strategy. link_strategy is object of class Link."""
         self.graph = link_strategy.link(self)
         return self
@@ -299,7 +315,7 @@ class TimeGraph:
                 list(node_1.nodes(data=True))[i][1][att].append(list(node_2.nodes(data=True))[i][1][att][j])
 
         for neighbor in list(graph.neighbors(node_2)):
-            graph.add_edge(node_1, neighbor)
+            graph.add_edge(node_1, neighbor, graph_binding = "sliding window", color = "#00ff00")
 
         graph.remove_node(node_2)
         return graph
@@ -333,13 +349,34 @@ class TimeGraph:
         graph.remove_node(node_2)
         return graph
 
-    def draw(self, color = "black"):
+    #TODO: add node weights and names to draw function
+    def draw(self):
         """Draws the created graph"""
-        colors = []
-        for j in range(len(self.graph.nodes)):
-            colors.append(color)
+        
         pos=nx.spring_layout(self.graph, seed=1)
-        nx.draw(self.graph, pos, node_size=40, node_color=colors)
+        
+        nodes_missing_color = [(u, d) for u, d in self.graph.nodes(data=True) if 'color' not in d]
+
+        edge_colors = [self.graph[u][v]['color'] for u, v in self.graph.edges()]
+        nodes_colors = [d["color"] for u, d in self.graph.nodes(data=True)]
+        
+        # Get edge weights to adjust edge thickness
+        edges = self.graph.edges(data=True)
+        weights = []
+        for _, _, data in edges:
+            weights.append(data.get('weight', 1))
+        #weights = [data['weight'] for _, _, data in edges]  # Extract weights
+
+        # Normalize weights for better visual scaling (optional, depending on your range of weights)
+        max_weight = max(weights) if weights else 1  # Avoid division by zero
+        min_weight = min(weights) if weights else 0
+        if max_weight == min_weight:
+            normalized_weights = [1 for weight in weights]
+        else:
+            normalized_weights = [(1 + 4 * (weight - min_weight) / (max_weight - min_weight)) for weight in
+                              weights]
+
+        nx.draw(self.graph, pos, node_size=100, node_color=nodes_colors, with_labels=False, edge_color=edge_colors, width=normalized_weights)
         plt.show()
         return self
     
@@ -386,6 +423,8 @@ class TimeGraph:
     def get_embedding(self):
         return self.embeddings
 
+    def _get_quantiles(self):
+        return self.quantiles, self.quantile_values
 
 class VisitorGraphEmbedding:
     def __init__(self):
@@ -674,4 +713,61 @@ class ToSequenceVisitorOrdinalPartition(ToSequenceVisitorMaster):
                 for i in range(len(short_series[k][j])):
                     self.sequences[k].append(short_series[k][j][i])
         
+        return self.sequences
+
+class ToSequenceVisitorQuantile(ToSequenceVisitorMaster):
+    def __init__(self):
+        super().__init__()
+        self.bins = None
+
+    def _set_nodes(self, dict: dict):
+
+        if isinstance(dict, list):
+            graphs = {}
+            for i in range(len(dict)):
+                graphs[list(dict[i].items())[0]] = list(dict[i].values())[0]
+            dict = graphs
+
+        self.nodes = []
+        self.data_nodes = []
+        for graph in dict.values():
+            self.nodes.append(list(graph.nodes))
+            self.data_nodes.append(list(graph.nodes(data=True)))
+        return self
+    
+    def to_sequence(self, graph):
+        self.graph = graph._get_graph()
+        self.bins, self.values = graph._get_quantiles()
+        self._set_nodes(graph._get_graphs())
+
+        self.sequences = [[] for _ in range(len(self.nodes))]
+
+        current_nodes = [None for _ in range(len(self.nodes))]
+        current_nodes_data = [None for _ in range(len(self.data_nodes))]
+
+        self.node_strategy.set_arguments(self.graph, self.nodes, {}, self.att)
+
+        for i in range(len(self.nodes)):
+            current_nodes[i] = self.nodes[i][0]
+            current_nodes_data[i] = self.data_nodes[i][0]
+
+        
+        i = 0
+        while len(self.sequences[0]) < self.timeseries_len:
+
+            for j in range(len(current_nodes)):
+
+                self.sequences[j] = self.value_strategy.append(self.sequences[j], current_nodes_data[j], self.bins[j], self.values[j])
+                
+                
+            for j in range(self.skip_values+1):
+                for k in range(len(current_nodes)):
+                    current_nodes[k] = self.node_strategy.next_node(i, k, current_nodes, self.switch_graphs, current_nodes[k])
+                    
+                    new_index = self.nodes[k].index(current_nodes[k])
+                    current_nodes_data[k] = self.data_nodes[k][new_index]
+                    if(current_nodes[k] == None):
+                        break
+
+            i += 1
         return self.sequences

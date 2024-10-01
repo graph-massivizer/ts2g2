@@ -50,10 +50,6 @@ class TsFile(TsRead):
         X = X['dim_0']
         return X[0]
 
-
-
-
-
 class XmlRead:
     """Extracts data from an xml file."""
     def __init__(self):
@@ -102,4 +98,4 @@ class FundamentalsReportFinancialStatements(XmlRead):
         for element in elements:
             column.append(float(element.text))
         
-        return column
+        return pd.Series(column)

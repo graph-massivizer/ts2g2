@@ -46,7 +46,7 @@ class StrategyLinkingGraphBySeasonalities(StrategyLinkingGraph):
 
     def apply(self, is_implemented):
         for i in range(len(self.graph.nodes) - self.period):
-            self.graph.add_edge(list(self.graph.nodes)[i], list(self.graph.nodes)[i+self.period], intergraph_binding='seasonality')
+            self.graph.add_edge(list(self.graph.nodes)[i], list(self.graph.nodes)[i+self.period], intergraph_binding='seasonality', color = "#00994c")
         return self.graph
 
 
@@ -80,7 +80,7 @@ class StrategyLinkingGraphByValueWithinRange(StrategyLinkingGraphByValue):
         for node_11, node_12 in zip(self.graph.nodes(data=True), self.graph.nodes):
             for node_21, node_22 in zip(self.graph.nodes(data=True), self.graph.nodes):
                 if  abs(node_11[1][self.attribute][0] - node_21[1][self.attribute][0]) < self.allowed_difference and node_12 != node_22:
-                    self.graph.add_edge(node_12, node_22, intergraph_binding = 'timesteps')
+                    self.graph.add_edge(node_12, node_22, intergraph_binding = 'timesteps', color = "#b2ff66")
 
         return self.graph
 

@@ -1,0 +1,1 @@
+::: embeddings.ts2g2_embeddings
