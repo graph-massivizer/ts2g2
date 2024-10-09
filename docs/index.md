@@ -248,6 +248,4 @@ Graphs are converted back to timeseries by sampling node values from the graph f
 
 When choosing the next node, the following strategies have been implemented so far: random node, random node neighbour, random node degree, random walk, random walk with restart, random walk with jump.
 
-<>## Citing our work
-<>When using this work for research purposes, we would appreciate it if the following references could be included:
 
