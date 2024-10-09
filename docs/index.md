@@ -30,7 +30,7 @@ This package is being developed as part of the [Graph-Massivizer](https://graph-
 The package is a joint effort between the [Jožef Stefan Institute](https://www.ijs.si/), the [University of Twente](https://www.utwente.nl/en/), the [Vrije Universiteit Amsterdam](https://vu.nl/en), the [University of Klagenfurt](https://www.aau.at/en/), the [University of Bologna](https://www.unibo.it/en), and [Peracton](https://peracton.com/).
 
 
-### Timeseries to graph conversion
+### Converting timeseries into graphs
 
 #### Implemented features
 
@@ -236,7 +236,7 @@ The package is a joint effort between the [Jožef Stefan Institute](https://www.
 
 
 
-### Graphs to timeseries conversion
+### Converting graphs into sequences
 
 Graphs are converted back to timeseries by sampling node values from the graph following different strategies. Below, we provide a short snippet of code, to illustrate how this can be done.
 
@@ -248,10 +248,6 @@ Graphs are converted back to timeseries by sampling node values from the graph f
 
 When choosing the next node, the following strategies have been implemented so far: random node, random node neighbour, random node degree, random walk, random walk with restart, random walk with jump.
 
-## Publications
-
-When using this work for research purposes, we would appreciate it if the following references could be included:
-
-
-Below we provide a curated list of papers related to our research in this area:
+<>## Citing our work
+<>When using this work for research purposes, we would appreciate it if the following references could be included:
 

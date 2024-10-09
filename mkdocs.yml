@@ -81,23 +81,25 @@ nav:
   - Home: index.md
 
   - Documentation:
-    - Input/output: documentation/tsg_io.md
-    - Model: documentation/model.md
-    - To Time sequence strategy: documentation/strategy_to_time_sequence.md
-    - Graph linking strategy: documentation/strategy_linking_graph.md
-    - Strategy connecting multiple graphs: documentation/strategy_linking_multi_graphs.md
-    - To graph strategy: documentation/strategy_to_graph.md
+    - IO: documentation/tsg_io.md
+    - Core model: documentation/model.md
+    - Converting graphs to sequences: documentation/strategy_to_time_sequence.md
+    - Graph linking strategies - univariate: documentation/strategy_linking_graph.md
+    - Graph linking strategies - multivariate: documentation/strategy_linking_multi_graphs.md
+    - Turning time series into graphs: documentation/strategy_to_graph.md
     - Embeddings: documentation/embeddings.md
+
+  - Posters & Publications: assets/pdfs/KDD-2024-poster-ts2g.pdf
 
   - Tutorial: 
     - Overview: tutorial/tutorial-ts2g2-overview.ipynb
-    - To graph strategies: 
+    - Turning time series into graphs: 
       - Visibility strategy: tutorial/tutorial-ts2g-visibility-strategy.ipynb
       - Ordinal partition strategy: tutorial/tutorial-ts2g-ordinal-partition.ipynb
       - Quantile strategy: tutorial/tutorial-ts2g-quantile.ipynb
       - Proximity networks strategy: tutorial/tutorial-ts2g-proximity-networks.ipynb
       - Sliding window strategy: tutorial/tutorial-ts2g-sliding-window-strategy.ipynb
       - Timeseries correlation strategy: tutorial/tutorial-ts2g-timeseries-correlation.ipynb
-    - To time series strategies: tutorial/tutorial-g2ts-strategies.ipynb
+    - Converting graphs into sequences: tutorial/tutorial-g2ts-strategies.ipynb
     - Embeddings: tutorial/tutorial-ts2g2-embeddings.ipynb
     - Compact tutorial: tutorial/tutorial-ts2g2-compact.ipynb
