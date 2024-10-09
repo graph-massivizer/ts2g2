@@ -83,10 +83,10 @@ nav:
   - Documentation:
     - IO: documentation/tsg_io.md
     - Core model: documentation/model.md
-    - Converting graphs to sequences: documentation/strategy_to_time_sequence.md
+    - Turning time series into graphs: documentation/strategy_to_graph.md
     - Graph linking strategies - univariate: documentation/strategy_linking_graph.md
     - Graph linking strategies - multivariate: documentation/strategy_linking_multi_graphs.md
-    - Turning time series into graphs: documentation/strategy_to_graph.md
+    - Converting graphs to sequences: documentation/strategy_to_time_sequence.md
     - Embeddings: documentation/embeddings.md
 
   - Posters & Publications: assets/pdfs/KDD-2024-poster-ts2g.pdf
