@@ -96,7 +96,7 @@ nav:
     - Turning time series into graphs: 
       - Visibility strategy: tutorial/tutorial-ts2g-visibility-strategy.ipynb
       - Ordinal partition strategy: tutorial/tutorial-ts2g-ordinal-partition.ipynb
-      - Quantile strategy: tutorial/tutorial-ts2g-quantile.ipynb
+      - Quantile strategy: tutorial/tutorial-ts2g-quantiles.ipynb
       - Proximity networks strategy: tutorial/tutorial-ts2g-proximity-networks.ipynb
       - Sliding window strategy: tutorial/tutorial-ts2g-sliding-window-strategy.ipynb
       - Timeseries correlation strategy: tutorial/tutorial-ts2g-timeseries-correlation.ipynb
