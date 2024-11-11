@@ -183,23 +183,23 @@ class TrainTimeseriesEmbeddingModel(TrainModel):
     def get_model(self):
         return self.model
     
-    class VisitorGraphEmbeddingModelDoc2Vec(VisitorGraphEmbeddingModel):
-        def __init__(self, model):
-            self.model = model
-        
-        def get_random_walks_for_graph(self, df_graph):
-            df = pd.DataFrame(df_graph.edges(data=True), columns = ['source', 'target', 'attributes'])
-            G = nx.from_pandas_edgelist(df, 'source', 'target')
-            walks = nx.generate_random_paths(G, sample_size=15, path_length=45)
-            str_walks = [[str(n) for n in walk] for walk in walks]
-            return str_walks
-        
-        def predict(self, graph):
-            doc = self.get_random_walks_for_graph(graph._get_graph())
-            documents_gensim = []
-            for i, doc_walks in enumerate(doc):
-                documents_gensim = documents_gensim + [''.join(TaggedDocument(doc_walks, [i]).words)]
-            return self.model.infer_vector(documents_gensim)
+class VisitorGraphEmbeddingModelDoc2Vec(VisitorGraphEmbeddingModel):
+    def __init__(self, model):
+        self.model = model
+    
+    def get_random_walks_for_graph(self, df_graph):
+        df = pd.DataFrame(df_graph.edges(data=True), columns = ['source', 'target', 'attributes'])
+        G = nx.from_pandas_edgelist(df, 'source', 'target')
+        walks = nx.generate_random_paths(G, sample_size=15, path_length=45)
+        str_walks = [[str(n) for n in walk] for walk in walks]
+        return str_walks
+    
+    def predict(self, graph):
+        doc = self.get_random_walks_for_graph(graph._get_graph())
+        documents_gensim = []
+        for i, doc_walks in enumerate(doc):
+            documents_gensim = documents_gensim + [''.join(TaggedDocument(doc_walks, [i]).words)]
+        return self.model.infer_vector(documents_gensim)
         
 class VisitorTimeseriesEmbeddingModelTS2Vec(VisitorTimeseriesEmbeddingModel):
     def __init__(self, model):
