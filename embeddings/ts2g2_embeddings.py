@@ -12,8 +12,15 @@ class VisitorTimeseriesEmbeddingModel:
     def predict(self, timeseries):
         pass
 
-class VisitorGraphEmbeddingModel:
+class TrainModel:
     def __init__(self):
+        self.model = None
+
+    def get_model(self):
+        pass
+
+class VisitorGraphEmbeddingModel:
+    def __init__(self, model):
         self.model = None
     
     def predict(self, graph):
@@ -111,50 +118,14 @@ from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 # https://medium.com/@klintcho/doc2vec-tutorial-using-gensim-ab3ac03d3a1
 
 
-class VisitorGraphEmbeddingModelDoc2Vec(VisitorGraphEmbeddingModel):
-    def __init__(self):
-        self.model = None
-    
-    def get_random_walks_for_graph(self, df_graph):
-        df = pd.DataFrame(df_graph.edges(data=True), columns = ['source', 'target', 'attributes'])
-        G = nx.from_pandas_edgelist(df, 'source', 'target')
-        walks = nx.generate_random_paths(G, sample_size=15, path_length=45)
-
-        str_walks = [[str(n) for n in walk] for walk in walks]
-        return str_walks
-
-    def train_model(self, graphs, embedding_size):
-        documents = []
-        for idx in range(len(graphs)):
-            source_target_dataframe = graphs[idx]._get_graph()
-            document = self.get_random_walks_for_graph(source_target_dataframe)
-            documents = documents + [document]
-
-        documents_gensim = []
-        for i, doc_walks in enumerate(documents):
-            for doc_walk in doc_walks:
-                documents_gensim = documents_gensim + [TaggedDocument(doc_walk, [i])]
-
-        model = Doc2Vec(documents_gensim, vector_size=embedding_size, window=3, min_count=1, workers=4)
-
-        model.train(documents_gensim, total_examples=model.corpus_count, epochs=model.epochs)
-        self.model = model
-        return self
-    
-    def predict(self, graph):
-        doc = self.get_random_walks_for_graph(graph._get_graph())
-        documents_gensim = []
-        for i, doc_walks in enumerate(doc):
-            documents_gensim = documents_gensim + [''.join(TaggedDocument(doc_walks, [i]).words)]
-        return self.model.infer_vector(documents_gensim)
-
 
 from embeddings.ts2vec.ts2vec import TS2Vec
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import torch
 
-class VisitorTimeseriesEmbeddingModelTS2Vec(VisitorTimeseriesEmbeddingModel):
+
+class TrainTimeseriesEmbeddingModel(TrainModel):
     def __init__(self):
         self.model = None
 
@@ -176,6 +147,31 @@ class VisitorTimeseriesEmbeddingModelTS2Vec(VisitorTimeseriesEmbeddingModel):
         train_embeddings = self.model.encode(train_data)
         return self
     
+    def get_model(self):
+        return self.model
+    
+class VisitorGraphEmbeddingModelDoc2Vec(VisitorGraphEmbeddingModel):
+    def __init__(self, model):
+        self.model = model
+    
+    def get_random_walks_for_graph(self, df_graph):
+        df = pd.DataFrame(df_graph.edges(data=True), columns = ['source', 'target', 'attributes'])
+        G = nx.from_pandas_edgelist(df, 'source', 'target')
+        walks = nx.generate_random_paths(G, sample_size=15, path_length=45)
+        str_walks = [[str(n) for n in walk] for walk in walks]
+        return str_walks
+    
+    def predict(self, graph):
+        doc = self.get_random_walks_for_graph(graph._get_graph())
+        documents_gensim = []
+        for i, doc_walks in enumerate(doc):
+            documents_gensim = documents_gensim + [''.join(TaggedDocument(doc_walks, [i]).words)]
+        return self.model.infer_vector(documents_gensim)
+        
+class VisitorTimeseriesEmbeddingModelTS2Vec(VisitorTimeseriesEmbeddingModel):
+    def __init__(self, model):
+        self.model = model
+    
     def predict(self, timeseries):
         while(isinstance(timeseries, list)):
             timeseries = timeseries[0]
@@ -188,8 +184,8 @@ class VisitorTimeseriesEmbeddingModelTS2Vec(VisitorTimeseriesEmbeddingModel):
             timeseries = timeseries.reshape(1, timeseries.shape[0], timeseries.shape[1])
         x = self.model.encode(timeseries, encoding_window='full_series')
         return x[0]
-
-
+    
+    
 
 
 

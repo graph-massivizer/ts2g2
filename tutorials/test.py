@@ -11,7 +11,7 @@ from from_graph.strategy_to_time_sequence import StrategyNextValueInNodeRandom, 
 from to_graph.strategy_linking_graph import StrategyLinkingGraphByValueWithinRange, LinkNodesWithinGraph
 from to_graph.strategy_linking_multi_graphs import LinkGraphs, PearsonCorrelation
 from to_graph.strategy_to_graph import BuildTimeseriesToGraphNaturalVisibilityStrategy, BuildTimeseriesToGraphHorizontalVisibilityStrategy, BuildTimeseriesToGraphOrdinalPartition, BuildTimeseriesToGraphQuantile, BuildTimeseriesToGraphProximityNetwork, BuildTimeseriesToGraphPearsonCorrelation
-from embeddings.ts2g2_embeddings import EmbeddingRanking, VisitorGraphEmbeddingModelDoc2Vec, VisitorTimeseriesEmbeddingModelTS2Vec
+from embeddings.ts2g2_embeddings import EmbeddingRanking, VisitorGraphEmbeddingModelDoc2Vec, VisitorTimeseriesEmbeddingModelTS2Vec, TrainGraphEmbeddingModel, TrainTimeseriesEmbeddingModel
 
 amazon_path = os.path.join(os.getcwd(), "amazon", "AMZN.csv")
 apple_path = os.path.join(os.getcwd(), "apple", "APPLE.csv")
@@ -225,10 +225,11 @@ path = TsFile(adiac_path).from_ts()
 
 embedding_size = 20
 
-model_graph = VisitorGraphEmbeddingModelDoc2Vec().train_model([timegraph_1, timegraph_2, timegraph_3, timegraph_4, timegraph_6, timegraph_7, timegraph_8, timegraph_ordinal_partition, timegraph_quantile], embedding_size)
-model_ts = VisitorTimeseriesEmbeddingModelTS2Vec().train_model(path, embedding_size, epoch=20)
+model_graph = TrainGraphEmbeddingModel().train_model([timegraph_1, timegraph_2, timegraph_3, timegraph_4, timegraph_6, timegraph_7, timegraph_8, timegraph_ordinal_partition, timegraph_quantile], embedding_size)
+model_ts = TrainTimeseriesEmbeddingModel().train_model(path, embedding_size, epoch=20)
 
-
+model_graph = VisitorGraphEmbeddingModelDoc2Vec(model_graph.get_model())
+model_ts = VisitorTimeseriesEmbeddingModelTS2Vec(model_ts.get_model())
 """
 
 
