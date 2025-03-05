@@ -51,6 +51,8 @@ all = ["datachart[dev,test]"]
 where = ["."]
 include = ["datachart*"]
 
+[tool.setuptools]
+license-files = []
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }
