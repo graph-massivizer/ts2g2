@@ -1,6 +1,8 @@
 """
 Time series graphs
 """
+__all__ = ["TimeseriesGraph", "TimeseriesToOrdinalPatternGraph", "TimeseriesToCorrelationGraph", "TimeseriesToProximityNetworkGraph", "TimeseriesToQuantileGraph", "TimeseriesToGraphStrategy", "TimeseriesEdgeVisibilityConstraints", "EdgeAdditionStrategy", "EdgeWeightingStrategy", "EdgeWeightingStrategyAngle", "EdgeWeightingStrategyNull",
+           "TimeseriesEdgeVisibilityConstraintsNatural", "TimeseriesEdgeVisibilityConstraintsHorizontal","TimeseriesEdgeVisibilityConstraintsVisibilityAngle"]
 import networkx as nx
 import itertools
 import math
@@ -33,13 +35,28 @@ class EdgeWeightingStrategyNull(EdgeWeightingStrategy):
     def weight_edge(self, G, x1, x2, y1, y2):
         return None
 
-
+#不是在core中定义了TimeGraph吗
 class TimeseriesGraph:
-    def __init__(self, graph):
+    def __init__(self, graph: nx.DiGraph):
         self.graph = graph
 
     def to_sequence(self, graph_to_timeseries_strategy, sequence_length):
         return graph_to_timeseries_strategy.to_sequence(self.graph, sequence_length)
+
+    @property
+    def nodes(self):
+        return self.graph.nodes
+
+    @property
+    def edges(self):
+        return self.graph.edges
+
+    @property
+    def successors(self):
+        return self.graph.successors
+
+    def __getitem__(self, node):
+        return self.graph[node]
 
 
 class TimeseriesToOrdinalPatternGraph:
@@ -94,7 +111,8 @@ class TimeseriesToOrdinalPatternGraph:
         return combined_pattern
 
     def to_graph(self, timeseries_stream):
-        timeseries = timeseries_stream.read()
+        # timeseries = timeseries_stream.read()
+        timeseries = timeseries_stream
         if isinstance(timeseries, list) and isinstance(timeseries[0], np.ndarray):
             # Multivariate case
             embedded_series = self.multivariate_embeddings(timeseries)
@@ -247,7 +265,8 @@ class TimeseriesToProximityNetworkGraph:
     
     def _get_bins(self):
         return None, None
-
+    
+    #python可以嵌套定义graph
     class CycleNetwork:
         def __init__(self, time_series, segment_length, threshold):
             self.time_series = time_series
@@ -405,7 +424,7 @@ class TimeseriesToQuantileGraph:
         self.values = []
 
     def discretize_to_quantiles(self, time_series):
-        time_series = time_series.read()
+        # time_series = time_series.read()
         quantiles = np.linspace(0, 1, self.Q + 1)
         quantile_bins = np.quantile(time_series, quantiles)
         quantile_bins[0] -= 1e-9
@@ -425,11 +444,11 @@ class TimeseriesToQuantileGraph:
         return np.array(mean_jumps)
     
     def get_quantile_values(self, timeseries, bins, indices):
-        timeseries = timeseries.read()
+        # timeseries = timeseries.read()
         values = [[] for i in range(len(bins)-1)]
         
         for i in range(len(indices)):
-            values[indices[i]].append(timeseries.iloc[i])
+            values[indices[i]].append(timeseries[i])
         
         self.values.append(values)
         return
@@ -518,7 +537,7 @@ class TimeseriesToGraphStrategy:
             >>> g = ts2g.to_graph(stream)
             >>> print(g)
         """
-        timeseries = timeseries_stream.read()
+        timeseries = timeseries_stream.read() #here, read() could be used
 
         G = nx.path_graph(len(timeseries), create_using=self.initialize_graph(self.graph_type))
         nx.set_node_attributes(G, dict(enumerate(timeseries)), "value")
@@ -625,6 +644,8 @@ class TimeseriesEdgeVisibilityConstraintsNatural(TimeseriesEdgeVisibilityConstra
             self.name += (f" with limit({limit})")
 
     def is_obstructed(self, timeseries, x1, x2, y1, y2):
+        if x2 == x1:
+            return True  # Prevent division by zero
         # check if any value between obstructs line of sight
         slope = (y2 - y1) / (x2 - x1)
         offset = y2 - slope * x2
@@ -737,15 +758,20 @@ class TimeseriesEdgeVisibilityConstraintsVisibilityAngle(TimeseriesEdgeVisibilit
         self.consider_visibility_angle_absolute_value = consider_visibility_angle_absolute_value
 
     def is_obstructed(self, timeseries, x1, x2, y1, y2):
+        if x2 == x1:
+            return False
         slope = (y2 - y1) / (x2 - x1)
 
         angle = math.atan(slope)
+        
         visibility_angle = self.visibility_angle
         if (self.consider_visibility_angle_absolute_value):
             angle = abs(angle)
             visibility_angle = abs(self.visibility_angle)
-
-        return angle < visibility_angle
+        # print('this is ', angle < visibility_angle)
+        #if angle < visibility_angle: is not obstructed,
+        # so it should be angle > visibility_angle, instead of angle < visibility_angle
+        return angle > visibility_angle
     
     def _get_name(self):
         return (f" with angle({self.visibility_angle})")

@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import networkx as nx
-from timeseries.ordinal_partition import TimeseriesToOrdinalPatternGraph
+from to_graph import TimeseriesToOrdinalPatternGraph
 
 
 class TestTimeseriesToOrdinalPatternGraph(unittest.TestCase):
