@@ -1,58 +1,58 @@
-[build-system]
-requires = ['setuptools>=42']
-build-backend = 'setuptools.build_meta'
+    [build-system]
+    requires = ['setuptools>=42']
+    build-backend = 'setuptools.build_meta'
 
 
-[project]
-name = "ts2g2"
-description = "A package to turn timeseries into graphs and graphs into timeseries"
-version = "0.1.0"
-authors = [
-    { name = "Joze Rozanec", email = "jmrozanec@gmail.com" }
-]
-readme = "README.md"
-license = {file = "LICENSE"}
-keywords = ["machine learning", "graphs", "networks", "timeseries"]
-classifiers = [
-  # How mature is this project? Common values are
-  #   3 - Alpha
-  #   4 - Beta
-  #   5 - Production/Stable
-  "Development Status :: 4 - Beta",
+    [project]
+    name = "ts2g2"
+    description = "A package to turn timeseries into graphs and graphs into timeseries"
+    version = "0.1.0"
+    authors = [
+        { name = "Joze Rozanec", email = "jmrozanec@gmail.com" }
+    ]
+    readme = "README.md"
+    license = {file = "LICENSE"}
+    keywords = ["machine learning", "graphs", "networks", "timeseries"]
+    classifiers = [
+    # How mature is this project? Common values are
+    #   3 - Alpha
+    #   4 - Beta
+    #   5 - Production/Stable
+    "Development Status :: 4 - Beta",
 
-  # Pick your license as you wish (see also "license" above)
-  "License :: OSI Approved :: Apache Software License",
+    # Pick your license as you wish (see also "license" above)
+    "License :: OSI Approved :: Apache Software License",
 
-  # Specify the Python versions you support here.
-  "Programming Language :: Python :: 3.9",
-]
+    # Specify the Python versions you support here.
+    "Programming Language :: Python :: 3.9",
+    ]
 
-requires-python = ">= 3.9"
+    requires-python = ">= 3.9"
 
-[project.urls]
-Source = "https://github.com/jmrozanec/time-series-generator"
-Docs = "https://github.com/jmrozanec/time-series-generator"
+    [project.urls]
+    Source = "https://github.com/jmrozanec/time-series-generator"
+    Docs = "https://github.com/jmrozanec/time-series-generator"
 
-[project.optional-dependencies]
-dev = [
-    "black",
-    "flake8",
-    "python-githooks",
-    "mkdocs-material",
-    "mkdocs-jupyter",
-]
-test = [
-    "coverage",
-    "nbmake",
-]
-all = ["datachart[dev,test]"]
+    [project.optional-dependencies]
+    dev = [
+        "black",
+        "flake8",
+        "python-githooks",
+        "mkdocs-material",
+        "mkdocs-jupyter",
+    ]
+    test = [
+        "coverage",
+        "nbmake",
+    ]
+    all = ["datachart[dev,test]"]
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["datachart*"]
+    [tool.setuptools.packages.find]
+    where = ["."]
+    include = ["datachart*"]
 
-[tool.setuptools]
-license-files = []
+    [tool.setuptools]
+    license-files = []
 
-[tool.setuptools.dynamic]
-dependencies = { file = ["requirements.txt"] }
+    [tool.setuptools.dynamic]
+    dependencies = { file = ["requirements.txt"] }

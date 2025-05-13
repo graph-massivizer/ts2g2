@@ -186,3 +186,4 @@ tutorials/kendall_tau_results/**
 embeddings/ts2vec/**
 !embeddings/ts2vec/.gitkeep
 
+./vscode/

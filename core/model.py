@@ -19,6 +19,8 @@ class StrategyNotImplementedError(Exception):
     """Custom exception for strategies that are not implemented."""
     pass
 
+
+#it is a list, generally speaking
 class Timeseries:
     """Saves extracted data as timeseries."""
     def __init__(self, timeseries):
@@ -82,7 +84,7 @@ class TimeseriesPreprocessingSlidingWindow(TimeseriesPreprocessing):
             self.segments.append(ts[i:i + self.win_size])
         return TimeseriesView(self.segments)
 
-
+#why this one not inherit from TimeseriesPreprocessing?
 class TimeseriesPreprocessingComposite():
     """
     Composites processing strategies, allowing us to use multiple of them.
@@ -106,10 +108,13 @@ class TimeseriesPreprocessingComposite():
             self.ts = strat.process(self.ts).get_ts()[0]
         return TimeseriesView(self.ts)
 
+
+#what is this used for?
 class TimeseriesStream:
   def read(self):
       return None
 
+#and this?
 class TimeseriesArrayStream(TimeseriesStream):
     def __init__(self, array):
         self.array = copy.deepcopy(array)
@@ -117,7 +122,7 @@ class TimeseriesArrayStream(TimeseriesStream):
     def read(self):
         return copy.deepcopy(self.array)
 
-
+#this can sotre several Timeseries array []
 class TimeseriesView:
     """
     Stores one or more already processed timeseries, then changes them to graph using provided strategy.
@@ -154,6 +159,7 @@ class TimeseriesView:
         return self
 
     def to_graph(self, strategy: to_graph.strategy_to_graph):
+        #
         pool = ["#000000", "#101010", "#202020", "#303030", "#404040", "#505050", "#606060", "#707070", "#808080", "#909090", "#a0a0a0", "#b0b0b0", "#c0c0c0", "#d0d0d0", "#e0e0e0", "#f0f0f0"]
         num = math.floor(16/len(self.ts))
         if len(self.ts) > 16:
