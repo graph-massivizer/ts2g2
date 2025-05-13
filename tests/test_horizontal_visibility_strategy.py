@@ -1,6 +1,6 @@
 import unittest
 
-from to_graph.strategies import TimeseriesEdgeVisibilityConstraintsHorizontal
+from to_graph import TimeseriesEdgeVisibilityConstraintsHorizontal
 
 
 class TestTimeseriesEdgeVisibilityConstraintsHorizontal(unittest.TestCase):
@@ -10,7 +10,7 @@ class TestTimeseriesEdgeVisibilityConstraintsHorizontal(unittest.TestCase):
 
     def test_no_obstruction(self):
         # No obstruction: intermediate points are below max(y1, y2)
-        timeseries = [1, 2, 1, 2, 1]
+        timeseries = [2, 1, 1, 1, 2]
         x1, x2 = 0, 4
         y1, y2 = timeseries[x1], timeseries[x2]
         self.assertFalse(self.constraint.is_obstructed(timeseries, x1, x2, y1, y2))
@@ -41,7 +41,7 @@ class TestTimeseriesEdgeVisibilityConstraintsHorizontal(unittest.TestCase):
     def test_edge_case_with_limit_no_obstruction(self):
         # Test with limit: No obstruction within the limit
         self.constraint.limit = 1
-        timeseries = [1, 2, 2, 2, 1]
+        timeseries = [2, 3, 1, 1, 2]
         x1, x2 = 0, 4
         y1, y2 = timeseries[x1], timeseries[x2]
         # The point at index 1 should be ignored

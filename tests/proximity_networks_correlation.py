@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
 import networkx as nx
-from timeseries import proximity_networks # Replace with the actual module name
-
+# from timeseries import proximity_networks # Replace with the actual module name
+from to_graph import TimeseriesToProximityNetworkGraph as proximity_networks
 
 class TestCorrelationNetwork(unittest.TestCase):
     def setUp(self):

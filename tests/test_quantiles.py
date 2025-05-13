@@ -1,7 +1,8 @@
 import unittest
 import numpy as np
 import networkx as nx
-from timeseries.quantiles import TimeseriesToQuantileGraph
+# from timeseries.quantiles import TimeseriesToQuantileGraph
+from to_graph import TimeseriesToQuantileGraph
 
 
 class TestTimeseriesToQuantileGraph(unittest.TestCase):
