@@ -1,6 +1,6 @@
 import unittest
 
-from to_graph import TimeseriesEdgeVisibilityConstraintsHorizontal
+from strategies.ts2g import TimeseriesEdgeVisibilityConstraintsHorizontal
 
 
 class TestTimeseriesEdgeVisibilityConstraintsHorizontal(unittest.TestCase):

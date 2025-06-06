@@ -1,7 +1,6 @@
 import unittest
 import math
-
-from to_graph import TimeseriesEdgeVisibilityConstraintsVisibilityAngle
+from strategies.ts2g import TimeseriesEdgeVisibilityConstraintsVisibilityAngle
 
 class TestTimeseriesEdgeVisibilityConstraintsVisibilityAngle(unittest.TestCase):
 

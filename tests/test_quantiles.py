@@ -1,8 +1,7 @@
 import unittest
 import numpy as np
 import networkx as nx
-# from timeseries.quantiles import TimeseriesToQuantileGraph
-from to_graph import TimeseriesToQuantileGraph
+from strategies.ts2g import TS2G_STRATEGY_REGISTRY
 
 
 class TestTimeseriesToQuantileGraph(unittest.TestCase):
@@ -10,7 +9,8 @@ class TestTimeseriesToQuantileGraph(unittest.TestCase):
     def setUp(self):
         self.Q = 4  # Number of quantiles
         self.phi = 1
-        self.ts_to_qg = TimeseriesToQuantileGraph(self.Q, self.phi)
+        # self.ts_to_qg = TimeseriesToQuantileGraph(self.Q, self.phi)
+        self.ts_to_qg = TS2G_STRATEGY_REGISTRY["quantile"](self.Q, self.phi).get_strategy()
 
     def test_discretize_to_quantiles(self):
         time_series = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])

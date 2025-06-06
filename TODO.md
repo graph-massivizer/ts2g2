@@ -14,3 +14,10 @@ What needs to be done?
  - we need to extract the components into separate files, to enhance readability
  - enhance documentation
  - update the examples and sample project.
+
+
+ to run  tests
+- python -m unittest discover tests
+
+Raw Time Series → [Preprocessing] → Time Series View → [Graph Construction Strategy] → Time Graph → [Sequence/Embedding Extraction]
+

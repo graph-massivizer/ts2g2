@@ -1,11 +1,7 @@
 import unittest
 from unittest.mock import Mock
-
-from core import model
-from core.model import TimeseriesArrayStream
-from to_graph import TimeseriesGraph
-from to_graph import TimeseriesToGraphStrategy
-
+from strategies.ts2g import TS2G_STRATEGY_REGISTRY,VisibilityGraphStrategy
+from core import Timeseries, TimeGraph
 class MockVisibilityConstraint:       
         def is_obstructed(self, timeseries, x1, x2, y1, y2):
             return False  # Mock always returns False for visibility
@@ -14,17 +10,17 @@ class TestToGraphMethod(unittest.TestCase):
     def test_to_graph(self):
 
         # Set up the test
-        self.strategy_instance = TimeseriesToGraphStrategy([MockVisibilityConstraint()])
+        self.strategy_instance = VisibilityGraphStrategy([MockVisibilityConstraint()])
 
         # Call the to_graph method with the mock timeseries stream
 
-        stream = model.TimeseriesArrayStream([1, 2, 3, 4, 5])
+        stream = Timeseries([1, 2, 3, 4, 5])
 
 
         result_graph = self.strategy_instance.to_graph(stream)
 
         # Check if the result is an instance of TimeseriesGraph
-        self.assertIsInstance(result_graph, TimeseriesGraph)
+        self.assertIsInstance(result_graph,TimeGraph)
 
         # Check if the graph has been constructed correctly
         expected_nodes = [0, 1, 2, 3, 4]
@@ -39,16 +35,16 @@ class TestToGraphMethod(unittest.TestCase):
     def test_to_graph_with_empty_array(self):
 
         # Set up the test
-        self.strategy_instance = TimeseriesToGraphStrategy([MockVisibilityConstraint()])
+        self.strategy_instance = VisibilityGraphStrategy([MockVisibilityConstraint()])
 
-        stream = model.TimeseriesArrayStream([])
+        stream = Timeseries([])
 
         result_graph = self.strategy_instance.to_graph(stream)
         print(result_graph.graph)
 
 
         # Check if the result is an instance of TimeseriesGraph
-        self.assertIsInstance(result_graph, TimeseriesGraph)
+        self.assertIsInstance(result_graph, TimeGraph)
 
 
         # Check if the graph has been constructed correctly
@@ -66,9 +62,9 @@ class TestListElements(unittest.TestCase):
     def __init__(self, methodName = "runTest"):
         super().__init__(methodName)
         # Set up the test
-        self.strategy_instance = TimeseriesToGraphStrategy([MockVisibilityConstraint()])
+        self.strategy_instance = VisibilityGraphStrategy([MockVisibilityConstraint()])
 
-        stream = model.TimeseriesArrayStream([1, 2, 3, 4, 5])
+        stream = Timeseries([1, 2, 3, 4, 5])
 
         result_graph = self.strategy_instance.to_graph(stream)
 

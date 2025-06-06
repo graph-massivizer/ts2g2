@@ -1,23 +1,35 @@
-from core.model import TimeseriesArrayStream
-from core.model import Timeseries
-# from generation.strategies import RandomWalkWithRestartSequenceGenerationStrategy
-from to_graph.strategies import TimeseriesToGraphStrategy, TimeseriesEdgeVisibilityConstraintsHorizontal, TimeseriesEdgeVisibilityConstraintsNatural, EdgeWeightingStrategyNull
 import networkx as nx
 import matplotlib.pyplot as plt
+import numpy as np
+from strategies.ts2g import  TS2G_STRATEGY_REGISTRY
+from core import Timeseries
+from pipeline import T2G2Pipeline
+from visualization import draw_g
+import os
+import utils
 
-def main():
-    #stream = TimeseriesArrayStream([2, 1, 3, 2, 1, 3, 2, 1, 3, 2, 1, 3])
-    stream = TimeseriesArrayStream([0.35, 0.9, 0.3, 0.8, 0.65, 0.95, 0.1, 0.4, 0.9, 0.2, 0.5, 1.0, 0.05, 0.1, 0.25, 0.75, 0.65, 0.9, 0.4, 0.5])
-    timeseries = Timeseries(stream)
-    ts2g = TimeseriesToGraphStrategy([TimeseriesEdgeVisibilityConstraintsHorizontal()], "undirected", EdgeWeightingStrategyNull())
-    g = ts2g.to_graph(stream)
+amazon_path = os.path.join(os.getcwd(), "data/amazon", "AMZN.csv")
 
-    nx.draw(g.graph)
-    plt.show()
+ts_data = utils.CsvFile(amazon_path, "Close").from_csv()
+  
+# ts_data = np.array([1.0, 2.5, 3.8, 2.2, 1.5, 2])
 
-    sequence = g.to_sequence(RandomWalkWithRestartSequenceGenerationStrategy(), sequence_length=500)
-    print('Original sequence: {}'.format(timeseries.to_sequence()))
-    print('Generated sequence: {}'.format(sequence))
+#to_graph strategy
+builder_cls = TS2G_STRATEGY_REGISTRY["proximity"] #registry
+strategy_ts = builder_cls(method="recurrence").get_strategy() #builder
 
-if __name__ == "__main__":
-    main()
+pipeline = T2G2Pipeline()
+embedding = (
+    pipeline.load_timeseries(ts_data)
+            .preprocess(method="minmax")
+            .apply_view_strategy(view_strategy="slice",start_index=60, end_index=90)
+            .to_graph(ts2g_strategy=strategy_ts)
+            .merge()
+            .to_embedding()
+            .run()
+)
+
+print("Final embedding:", embedding)
+graph = pipeline.get_Graph()
+print("graph is ", graph)
+draw_g(graph)

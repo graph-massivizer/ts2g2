@@ -1,16 +1,18 @@
 import unittest
 import numpy as np
 import networkx as nx
-from to_graph import TimeseriesToOrdinalPatternGraph
+from strategies.ts2g import TS2G_STRATEGY_REGISTRY
 
 
 class TestTimeseriesToOrdinalPatternGraph(unittest.TestCase):
     def setUp(self):
         self.w = 3
         self.tau = 1
-        self.obj = TimeseriesToOrdinalPatternGraph(self.w, self.tau)
+        self.obj = TS2G_STRATEGY_REGISTRY["ordinal"](self.w, self.tau).get_strategy()
+        # self.obj = TimeseriesToOrdinalPatternGraph(self.w, self.tau)
         self.time_series = np.array([4, 2, 1, 3, 5])
-        self.obj_quantiles = TimeseriesToOrdinalPatternGraph(self.w, self.tau, use_quantiles=True, Q=4)
+        self.obj_quantiles = TS2G_STRATEGY_REGISTRY["ordinal"](self.w, self.tau, use_quantiles=True, Q=4).get_strategy()
+        # self.obj_quantiles = TimeseriesToOrdinalPatternGraph(self.w, self.tau, use_quantiles=True, Q=4)
 
     def test_embeddings(self):
         expected_result = np.array([
