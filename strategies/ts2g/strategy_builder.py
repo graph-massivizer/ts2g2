@@ -1,12 +1,12 @@
 __all__ = [
-    "BuildStrategyForTimeseriesToGraph",
-    "BuildTimeseriesToGraphNaturalVisibilityStrategy",
-    "BuildTimeseriesToGraphHorizontalVisibilityStrategy",
-    "BuildTimeseriesToGraphOrdinalPartition",
-    "BuildTimeseriesToGraphQuantile",
-    "BuildTimeseriesToGraphProximityNetwork",
-    "BuildTimeseriesToGraphPearsonCorrelation",
-    "TS2G_STRATEGY_REGISTRY"
+    "BuildVisiblityStrategy",
+    "BuildNaturalVisibilityStrategy",
+    "BuildHorizontalVisibilityStrategy",
+    "BuildOrdinalPartitionStrategy",
+    "BuildQuantileStrategy",
+    "BuildProximityNetworkStrategy",
+    "BuildPearsonCorrelationStrategy",
+    "get_ts2g_strategy_builder"
 ]
             
 
@@ -16,9 +16,11 @@ from .proximity import *
 from .quantile import *
 from .single_node_hash import *
 from .visibility import *
+from .interface import StrategyBuilder, TimeseriesToGraphStrategy
+from strategies.register import register_strategy, get_strategy
 
-#visibility graph strategy
-class BuildStrategyForTimeseriesToGraph:
+@register_strategy("ts2g_builder", "visibility")
+class BuildVisiblityStrategy(StrategyBuilder):
     """
     Sets and returns a strategy with which we can convert timeseries into graphs.
     
@@ -42,28 +44,29 @@ class BuildStrategyForTimeseriesToGraph:
         """Sets a limit as to how many data instances two nodes must be apart to be considered for connection."""
         pass
 
-    def get_strategy(self): 
+    def get_strategy(self) -> TimeseriesToGraphStrategy:  # Added type annotation
         """Returns strategy.""" 
         return VisibilityGraphStrategy(
-            visibility_constraints = self.visibility,
-            graph_type= self.graph_type, 
+            visibility_constraints=self.visibility,
+            graph_type=self.graph_type, 
             edge_weighting_strategy=self.edge_weighting_strategy 
         )
 
 
-#natural visibility strategy builder
-class BuildTimeseriesToGraphNaturalVisibilityStrategy(BuildStrategyForTimeseriesToGraph):
+@register_strategy("ts2g_builder", "natural_visibility")
+class BuildNaturalVisibilityStrategy(BuildVisiblityStrategy):
     """As initial strategy sets Natural visibility strategy."""
     def __init__(self):
         super().__init__()
         self.visibility = [TimeseriesEdgeVisibilityConstraintsNatural()]
 
-    def with_limit(self, limit): #实现了limit方法，实现了重写
+    def with_limit(self, limit): 
         self.visibility[0] = TimeseriesEdgeVisibilityConstraintsNatural(limit)
         return self
 
-#horizontal visibility strategy builder
-class BuildTimeseriesToGraphHorizontalVisibilityStrategy(BuildStrategyForTimeseriesToGraph):
+
+@register_strategy("ts2g_builder", "horizontal_visibility")
+class BuildHorizontalVisibilityStrategy(BuildVisiblityStrategy):
     """As initial strategy sets Horizontal visibility strategy."""
     def __init__(self):
         super().__init__()
@@ -73,8 +76,9 @@ class BuildTimeseriesToGraphHorizontalVisibilityStrategy(BuildStrategyForTimeser
         self.visibility[0] = TimeseriesEdgeVisibilityConstraintsHorizontal(limit)
         return self
 
-#ordinal
-class BuildTimeseriesToGraphOrdinalPartition:
+
+@register_strategy("ts2g_builder", "ordinal")
+class BuildOrdinalPartitionStrategy(StrategyBuilder):
 
     def __init__(self, w, tau, use_quantiles=False, Q=4):
         self.w = w
@@ -82,48 +86,52 @@ class BuildTimeseriesToGraphOrdinalPartition:
         self.use_quantiles = use_quantiles
         self.Q = Q
     
-    def get_strategy(self):
+    def get_strategy(self) -> TimeseriesToGraphStrategy:  # Added type annotation
         """Returns strategy."""
         return OrdinalPatternGraphStrategy(self.w, self.tau, self.use_quantiles, self.Q)
 
-#quantile
-class BuildTimeseriesToGraphQuantile:
+
+@register_strategy("ts2g_builder", "quantile")
+class BuildQuantileStrategy(StrategyBuilder):
     
     def __init__(self, Q, phi):
         self.Q = Q
         self.phi = phi
 
-    def get_strategy(self):
-        return QuantileTransitionGraphStrategy(self.Q, phi = self.phi)
+    def get_strategy(self) -> TimeseriesToGraphStrategy:  # Added type annotation
+        return QuantileTransitionGraphStrategy(self.Q, phi=self.phi)
 
-#proximity
-class BuildTimeseriesToGraphProximityNetwork:
+
+@register_strategy("ts2g_builder", "proximity")
+class BuildProximityNetworkStrategy(StrategyBuilder):
 
     def __init__(self, method="cycle", segment_length=10, threshold=0.5, k=5, epsilon=0.5, recurrence_type="epsilon"):
         self.method = method
         self.segment_length = segment_length
-        self.treshold = threshold
+        self.threshold = threshold
         self.k = k
         self.epsilon = epsilon
         self.recurrence_type = recurrence_type
     
-    def get_strategy(self):
-        return ProximityGraphStrategy(method=self.method, segment_length=self.segment_length, threshold=self.treshold, k=self.k, epsilon=self.epsilon, recurrence_type=self.recurrence_type)
-    
-#
-class BuildTimeseriesToGraphPearsonCorrelation:
+    def get_strategy(self) -> TimeseriesToGraphStrategy:  # Added type annotation
+        return ProximityGraphStrategy(
+            method=self.method,
+            segment_length=self.segment_length,
+            threshold=self.threshold,
+            k=self.k,
+            epsilon=self.epsilon,
+            recurrence_type=self.recurrence_type
+        )
+
+
+@register_strategy("ts2g_builder", "pearson")
+class BuildPearsonCorrelationStrategy(StrategyBuilder):
     def __init__(self):
         pass
 
-    def get_strategy(self):
+    def get_strategy(self) -> TimeseriesToGraphStrategy:  # Added type annotation
         return SingleNodeHashGraphStrategy()
-"""Registry mapping strategy names to their builder classes for lookup by name."""
-# Strategy builder registry for lookup by name
-TS2G_STRATEGY_REGISTRY = {
-    "natural": BuildTimeseriesToGraphNaturalVisibilityStrategy,
-    "horizontal": BuildTimeseriesToGraphHorizontalVisibilityStrategy,
-    "ordinal": BuildTimeseriesToGraphOrdinalPartition,
-    "quantile": BuildTimeseriesToGraphQuantile,
-    "proximity": BuildTimeseriesToGraphProximityNetwork,
-    "pearson": BuildTimeseriesToGraphPearsonCorrelation,
-}
+
+
+def get_ts2g_strategy_builder(method: str) -> StrategyBuilder:
+    return get_strategy("ts2g_builder", method)

@@ -1,3 +1,5 @@
+from .strategy_to_time_sequence import StrategySelectNextNode, StrategyNextValueInNode
+from strategies.register import register_strategy, get_strategy
 
 class ToSequenceVisitorMaster:
     """
@@ -54,7 +56,7 @@ class ToSequenceVisitorMaster:
 
     def to_sequence(self, graph):
         """Converts graph into time sequences."""
-        pass
+        raise NotImplementedError("Subclasses must implement to_sequence(graph)")
 
     def _is_equal(self, graph_1, graph_2):
         """Compares two graphs if they are equal."""
@@ -66,6 +68,7 @@ class ToSequenceVisitorMaster:
         return True
 
 
+@register_strategy("g2ts", "sliding_window")
 class ToSequenceVisitorSlidingWindow(ToSequenceVisitorMaster):
     """Converts graphs made using sliding window mechanism back to timeseries"""
     def __init__(self):
@@ -137,6 +140,7 @@ class ToSequenceVisitorSlidingWindow(ToSequenceVisitorMaster):
             ts_len += 1
         return self.sequences
 
+@register_strategy("g2ts", "plain")
 class ToSequenceVisitor(ToSequenceVisitorMaster):
     """Converts ordinary graphs back to timeseries."""
     def __init__(self):
@@ -210,6 +214,7 @@ class ToSequenceVisitor(ToSequenceVisitorMaster):
 
 
 
+@register_strategy("g2ts", "ordinal_partition")
 class ToSequenceVisitorOrdinalPartition(ToSequenceVisitorMaster):
     """Converts graphs made using ordinal partition mechanism back to timeseries"""
     def __init__(self):
@@ -280,6 +285,7 @@ class ToSequenceVisitorOrdinalPartition(ToSequenceVisitorMaster):
         
         return self.sequences
 
+@register_strategy("g2ts", "quantile")
 class ToSequenceVisitorQuantile(ToSequenceVisitorMaster):
     def __init__(self):
         super().__init__()
@@ -336,3 +342,10 @@ class ToSequenceVisitorQuantile(ToSequenceVisitorMaster):
 
             i += 1
         return self.sequences
+
+# ---- Factory for G->TS strategies ----
+def get_g2ts_strategy(method: str):
+    """Fetch a registered graph-to-timeseries strategy by name.
+    Valid names (by default): 'plain', 'sliding_window', 'ordinal_partition', 'quantile'.
+    """
+    return get_strategy("g2ts", method)

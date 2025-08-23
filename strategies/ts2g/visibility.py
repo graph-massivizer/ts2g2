@@ -11,13 +11,13 @@ import math
 from core import TimeGraph
 
 
-#给edge赋权重的算法
+# Strategy to assign edge weights
 class EdgeWeightingStrategy:
     def weight (self, G, x1, x2, y1, y2):
         return None
 
 
-#visibility transformation 辅助类, 将角度赋为变得权重
+# Helper class for visibility transform: use angle as edge weight
 class EdgeWeightingStrategyAngle(EdgeWeightingStrategy):
     absolute_value = True
 
@@ -31,7 +31,7 @@ class EdgeWeightingStrategyAngle(EdgeWeightingStrategy):
             return abs(angle)
         return angle
 
-#无权边
+# Unweighted edges
 class EdgeWeightingStrategyNull(EdgeWeightingStrategy):
     def weight_edge(self, G, x1, x2, y1, y2):
         return None
@@ -317,7 +317,7 @@ class TimeseriesEdgeVisibilityConstraintsVisibilityAngle(TimeseriesEdgeVisibilit
         return (f" with angle({self.visibility_angle})")
 
 
-#visibility graph 行为接口
+# Strategy interface for adding edges in the visibility graph
 class EdgeAdditionStrategy:
     def add_edge(self, G, x1, x2, weight=None):
         return None

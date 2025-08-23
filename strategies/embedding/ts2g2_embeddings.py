@@ -8,7 +8,6 @@ __all__ = ["VisitorTimeseriesEmbeddingModel",
 
 import numpy as np
 import hashlib
-from core import TimeseriesView
 from scipy import stats
 
 
@@ -61,7 +60,7 @@ class EmbeddingRanking:
         self.graph_model = graph_model
         return self
     
-    def add_timeseries(self, timeseries: TimeseriesView):
+    def add_timeseries(self, timeseries):
         ts = timeseries.get_ts()
         ts_id = self.id(ts)
         self.dictionaries[0][ts_id] = self.timeseries_model.predict(ts)
@@ -124,7 +123,7 @@ from sklearn.preprocessing import StandardScaler
 # https://stackoverflow.com/questions/66665981/should-i-split-sentences-in-a-document-for-doc2vec
 # https://medium.com/@klintcho/doc2vec-tutorial-using-gensim-ab3ac03d3a1
 
-from .ts2vec import TS2Vec
+# from .ts2vec import TS2Vec
 
 class TrainTimeseriesEmbeddingModel(TrainModel):
     def __init__(self):

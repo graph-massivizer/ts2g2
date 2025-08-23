@@ -4,52 +4,81 @@ import networkx as nx
 #TODO: add node weights and names to draw function
 
 
+def _as_nx_graph(obj):
+    """Best-effort conversion of various pipeline graph containers to nx.Graph.
+    Accepts: TimeGraph-like (get_graph/_get_graph), nx.Graph, dict of graphs,
+    list/tuple of graphs. Composes multiple graphs when needed.
+    """
+    # Unwrap common wrappers
+    if hasattr(obj, "get_graph"):
+        try:
+            g = obj.get_graph()
+            if isinstance(g, nx.Graph):
+                return g
+        except Exception:
+            pass
+    if hasattr(obj, "_get_graph"):
+        try:
+            g = obj._get_graph()
+            if isinstance(g, nx.Graph):
+                return g
+        except Exception:
+            pass
+
+    # Already an nx.Graph
+    if isinstance(obj, nx.Graph):
+        return obj
+
+    # Dict of graphs (e.g., {id: TimeGraph/nx.Graph})
+    if isinstance(obj, dict):
+        graphs = []
+        for v in obj.values():
+            gv = _as_nx_graph(v)
+            if gv is not None:
+                graphs.append(gv)
+        if not graphs:
+            raise TypeError("No graphs found inside dict to compose.")
+        return nx.compose_all(graphs)
+
+    # List/tuple of graphs
+    if isinstance(obj, (list, tuple)):
+        graphs = []
+        for v in obj:
+            gv = _as_nx_graph(v)
+            if gv is not None:
+                graphs.append(gv)
+        if not graphs:
+            raise TypeError("No graphs found inside sequence to compose.")
+        return nx.compose_all(graphs)
+
+    raise TypeError(f"Unsupported graph input type: {type(obj)}")
+
+
 def draw_g(timegraph):
-    """Draws the created graph"""
-    
-    pos=nx.spring_layout(timegraph.get_graph(), seed=1)
-    
-    nodes_missing_color = [(u, d) for u, d in timegraph.graph.nodes(data=True) if 'color' not in d]
+    """Draw a graph from various input containers into 'example.png'."""
+    try:
+        G = _as_nx_graph(timegraph)
+    except Exception as e:
+        raise TypeError(f"draw_g expected a NetworkX graph or TimeGraph-like object; got error: {e}")
 
-    edge_colors = [timegraph.graph[u][v]['color'] for u, v in timegraph.graph.edges()]
-    nodes_colors = [d.get("color", "gray") for u, d in timegraph.graph.nodes(data=True)]
-    
-    # Get edge weights to adjust edge thickness
-    edges = timegraph.graph.edges(data=True)
-    weights = []
-    for _, _, data in edges:
-        weights.append(data.get('weight', 1))
-    #weights = [data['weight'] for _, _, data in edges]  # Extract weights
+    pos = nx.spring_layout(G, seed=1)
 
-    # Normalize weights for better visual scaling (optional, depending on your range of weights)
-    max_weight = max(weights) if weights else 1  # Avoid division by zero
-    min_weight = min(weights) if weights else 0
-    if max_weight == min_weight:
-        normalized_weights = [1 for weight in weights]
+    edge_colors = [G[u][v].get('color', 'gray') for u, v in G.edges()]
+    node_colors = [d.get('color', 'gray') for _, d in G.nodes(data=True)]
+
+    # Edge widths by (normalized) weight
+    weights = [data.get('weight', 1) for _, _, data in G.edges(data=True)]
+    if weights:
+        wmax, wmin = max(weights), min(weights)
+        if wmax == wmin:
+            norm_w = [1 for _ in weights]
+        else:
+            norm_w = [1 + 4 * (w - wmin) / (wmax - wmin) for w in weights]
     else:
-        normalized_weights = [(1 + 4 * (weight - min_weight) / (max_weight - min_weight)) for weight in
-                            weights]
+        norm_w = []
 
-    nx.draw(timegraph.graph, pos, node_size=100, node_color=nodes_colors, with_labels=False, edge_color=edge_colors, width=normalized_weights)
-    plt.savefig('example.png')
+    nx.draw(G, pos, node_size=100, node_color=node_colors, with_labels=False,
+            edge_color=edge_colors, width=norm_w)
+    plt.tight_layout()
+    #plt.savefig('example.png')
 
-
-# #detached from ProximityGraphStrategy
-# def _draw_network(self):
-#     """
-#     Draw the generated network.
-#     """
-#     pos = nx.spring_layout(self.network,k=2, iterations=50)
-
-#     # Get edge weights to adjust edge thickness
-#     edges = self.network.edges(data=True)
-#     weights = [data['weight'] for _, _, data in edges]  # Extract weights
-
-#     # Normalize weights for better visual scaling (optional, depending on your range of weights)
-#     max_weight = max(weights) if weights else 1  # Avoid division by zero
-#     min_weight = min(weights) if weights else 0
-#     normalized_weights = [(1 + 4 * (weight - min_weight) / (max_weight - min_weight)) for weight in
-#                             weights]  # Normalize between 1 and 5
-
-#     # Draw the network with thicker lines based on the edge weights
-#     nx.draw(self.network, pos, with_labels=True, edge_color='black', width=normalized_weights)

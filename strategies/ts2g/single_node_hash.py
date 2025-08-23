@@ -2,19 +2,25 @@ __all__ = ["SingleNodeHashGraphStrategy"]
 import networkx as nx
 import hashlib
 from core import TimeGraph
+from typing import TYPE_CHECKING
+from strategies.ts2g.interface import TimeseriesToGraphStrategy
+
+if TYPE_CHECKING:
+    from core.time_series import Timeseries
+    from core.graphs import BaseTimeGraph
 
 
 
-#TimeseriesToCorrelationGraph，这个只是演示，还缺乏功能
-class SingleNodeHashGraphStrategy:
+# TimeseriesToCorrelationGraph, this is just a demonstration and still lacks functionality
+class SingleNodeHashGraphStrategy(TimeseriesToGraphStrategy):
     def __init__(self):
         pass
     
-    def to_graph(self, timeseries):
-        timeseries = timeseries.read()
+    def to_graph(self, ts: "Timeseries") -> "BaseTimeGraph":
+        data = ts.get_data()
 
         G = nx.Graph()
-        G.add_node(self._hash(timeseries), timeseries = timeseries)
+        G.add_node(self._hash(data), timeseries = data)
 
         return TimeGraph(G)
     

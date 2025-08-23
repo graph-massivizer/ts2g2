@@ -4,10 +4,7 @@ import numpy as np
 from strategies.register import register_strategy
 from strategies.register import get_strategy
 from core import Timeseries
-
-class BaseViewStrategy:
-    def apply(self, time_series: Timeseries):
-        raise NotImplementedError("Must be implemented by subclass.")
+from .interface import BaseViewStrategy
 
 @register_strategy("view", "sliding_window")
 class FixedOverlapWindow(BaseViewStrategy):
@@ -71,7 +68,6 @@ class SliceView(BaseViewStrategy):
     def apply(self, time_series: Timeseries):
         return [time_series[self.start_index:self.end_index]]
 
-# Get window strategy by name
-def get_view_strategy(name: str, **kwargs):
-    cls = get_strategy("view", name)
-    return cls(**kwargs)
+# Get view strategy class by name (caller instantiates)
+def get_view_strategy(name: str):
+    return get_strategy("view", name)

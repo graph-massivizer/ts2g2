@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import Mock
-from strategies.ts2g import TS2G_STRATEGY_REGISTRY,VisibilityGraphStrategy
+from strategies.ts2g import VisibilityGraphStrategy
 from core import Timeseries, TimeGraph
 class MockVisibilityConstraint:       
         def is_obstructed(self, timeseries, x1, x2, y1, y2):

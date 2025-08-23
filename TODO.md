@@ -21,3 +21,5 @@ What needs to be done?
 
 Raw Time Series → [Preprocessing] → Time Series View → [Graph Construction Strategy] → Time Graph → [Sequence/Embedding Extraction]
 
+
+https://martinfowler.com/bliki/FluentInterface.html

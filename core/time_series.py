@@ -83,7 +83,14 @@ class Timeseries:
             sampling_rate=self.sampling_rate
         )
 
+    def to_numpy(self):
+        if self.backend == "numpy":
+            return self.data
+        elif self.backend == "raw":
+            return np.array(self.data)
+        else:
+            raise NotImplementedError(f"Unsupported backend: {self.backend}")
+
     def length(self):
         return len(self.data)
     
-

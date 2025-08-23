@@ -1,11 +1,14 @@
-__all__ = ['StrategyLinkingGraph', 
-           'StrategyLinkingGraphBySeasonalities', 
-           'StrategyLinkingGraphByValue', 
-           'StrategyLinkingGraphByValueWithinRange', 
-           'LinkNodesWithinGraph']
-
-
 import functools
+
+__all__ = [
+    "get_link_nodes_strategy_builder",
+    "GraphLinkStrategy",
+    "StrategyLinkingGraphBySeasonalities",
+    "StrategyLinkingGraphByValueWithinRange",
+]
+
+from abc import ABC, abstractmethod
+from strategies.register import register_strategy, get_strategy
 
 class StrategyNotImplementedError(Exception):
     """Custom exception for strategies that are not implemented."""
@@ -14,7 +17,7 @@ class StrategyNotImplementedError(Exception):
 def compare(x, y):
     return x.get_strategy_precedence() - y.get_strategy_precedence()
 
-class StrategyLinkingGraph:
+class GraphLinkStrategy(ABC):
     """
     Links nodes within graph.
     
@@ -35,10 +38,11 @@ class StrategyLinkingGraph:
     def get_strategy_precedence(self):
         return self.strategy_precedence
 
+    @abstractmethod
     def apply(self, is_implemented):
         pass
 
-class StrategyLinkingGraphBySeasonalities(StrategyLinkingGraph):
+class StrategyLinkingGraphBySeasonalities(GraphLinkStrategy):
     """
     Links all nodes that are sequentially self.period apart.
     
@@ -57,7 +61,7 @@ class StrategyLinkingGraphBySeasonalities(StrategyLinkingGraph):
         return self.graph
 
 
-class StrategyLinkingGraphByValue(StrategyLinkingGraph):
+class StrategyLinkingGraphByValue(GraphLinkStrategy):
     """Links nodes based on their value."""
     def __init__(self, graph):
         super().__init__(graph, 1)
@@ -92,6 +96,7 @@ class StrategyLinkingGraphByValueWithinRange(StrategyLinkingGraphByValue):
         return self.graph
 
 # TODO: this is a builder
+@register_strategy("link_nodes", "LinkNodesWithinGraph")
 class LinkNodesWithinGraph:
     """Builder class for linking nodes within one graph, through which we can access linking strategies."""
     def __init__(self):
@@ -118,7 +123,17 @@ class LinkNodesWithinGraph:
         self.command_array.append(StrategyLinkingGraphBySeasonalities(period))
         return self
 
+    def by_value_within_range(self, allowed_difference):
+        """Notes that we want to connect nodes by value within a tolerance (factory-based)."""
+        self.command_array.append(StrategyLinkingGraphByValueWithinRange(allowed_difference))
+        return self
+
     def by_value(self, strategy):
         """Notes that we want to connect nodes based on values and strategy."""
         self.command_array.append(strategy)
         return self
+
+# ---- Factory ----
+
+def get_link_nodes_strategy_builder():
+    return get_strategy("link_nodes", "LinkNodesWithinGraph")

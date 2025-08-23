@@ -1,14 +1,3 @@
-__all__ = ["StrategyLinkingMultipleGraphs",
-           "StrategyLinkingGraphsByCorrelation",
-           "StrategyLinkingGraphsByCorrelationSlidingWindow",
-           "StrategyLinkingMultipleGraphsByTimeCooccurrence",
-           "StrategyLinkingMultipleGraphsSlidingWindow",
-           "StrategyLinkingMultipleGraphsByPositionalCorrelationSlidingWindow",
-           "StrategyLinkingMultipleGraphsDynamicTimeWarping",
-           "LinkGraphs",
-           "Correlation",
-           "PearsonCorrelation"]
-
 import hashlib
 import networkx as nx
 import functools
@@ -18,10 +7,25 @@ from dtaidistance import dtw
 from scipy.stats import pearsonr
 import math
 
+__all__ = [
+    "get_link_multigraph_strategy_builder",
+    "LinkMultiGraphNodesStrategy",
+    "StrategyLinkingGraphsByCorrelation",
+    "StrategyLinkingGraphsByCorrelationSlidingWindow",
+    "StrategyLinkingMultipleGraphsByTimeCooccurrence",
+    "StrategyLinkingMultipleGraphsSlidingWindow",
+    "StrategyLinkingMultipleGraphsDynamicTimeWarping",
+    "StrategyLinkingMultipleGraphsByPositionalCorrelationSlidingWindow",
+    "LinkGraphs"
+]
+
+from abc import ABC, abstractmethod
+from strategies.register import register_strategy, get_strategy
+
 def compare(x, y):
     return x.get_strategy_precedence() - y.get_strategy_precedence()
 
-class StrategyLinkingMultipleGraphs:
+class LinkMultiGraphNodesStrategy(ABC):
     """
     Links multiple graphs together.
     
@@ -42,14 +46,16 @@ class StrategyLinkingMultipleGraphs:
     def get_strategy_precedence(self):
         return self.strategy_precedence
 
+    @abstractmethod
     def set_graphs(self, graphs, order, timeseries):
         pass
 
+    @abstractmethod
     def apply(self):
         pass
 
 
-class StrategyLinkingGraphsByCorrelation(StrategyLinkingMultipleGraphs):
+class StrategyLinkingGraphsByCorrelation(LinkMultiGraphNodesStrategy):
     def __init__(self, graphs, correlation):
         super().__init__(graphs, 2)
         self.correlation = correlation
@@ -73,8 +79,18 @@ class StrategyLinkingGraphsByCorrelation(StrategyLinkingMultipleGraphs):
             for (node_21, node_22) in zip(list(g.nodes(data = True)), list(g.nodes)):
                 if node_11 == node_21:
                     continue
-                ts1 = node_11[1]["timeseries"].reset_index(drop=True)
-                ts2 = node_21[1]["timeseries"].reset_index(drop=True)
+                # ts1 = node_11[1]["timeseries"].reset_index(drop=True)
+                # ts2 = node_21[1]["timeseries"].reset_index(drop=True)
+                ts1 = node_11[1]["timeseries"]
+                ts2 = node_21[1]["timeseries"]
+                import numpy as np
+                if isinstance(ts1, np.ndarray):
+                    ts1 = pd.Series(ts1)
+                if isinstance(ts2, np.ndarray):
+                    ts2 = pd.Series(ts2)
+
+                ts1 = ts1.reset_index(drop=True)
+                ts2 = ts2.reset_index(drop=True)
                 corr = self.correlation.get_correlation(ts1, ts2)
                 if pd.isna(corr):
                     corr = 0
@@ -88,7 +104,7 @@ class StrategyLinkingGraphsByCorrelation(StrategyLinkingMultipleGraphs):
         return hashlib.md5(str_to_hash.encode()).hexdigest()
 
 
-class StrategyLinkingGraphsByCorrelationSlidingWindow(StrategyLinkingMultipleGraphs):
+class StrategyLinkingGraphsByCorrelationSlidingWindow(LinkMultiGraphNodesStrategy):
     def __init__(self, graphs, correlation):
         super().__init__(graphs, 1)
         self.correlation = correlation
@@ -110,8 +126,19 @@ class StrategyLinkingGraphsByCorrelationSlidingWindow(StrategyLinkingMultipleGra
                 for (node_21, node_22) in zip(list(h.nodes(data = True)), list(h.nodes)):
                     if node_11 == node_21:
                         continue
-                    ts1 = node_11[1]["timeseries"].reset_index(drop=True)
-                    ts2 = node_21[1]["timeseries"].reset_index(drop=True)
+                    # ts1 = node_11[1]["timeseries"].reset_index(drop=True)
+                    # ts2 = node_21[1]["timeseries"].reset_index(drop=True)
+                    import numpy as np
+                    ts1 = node_11[1]["timeseries"]
+                    ts2 = node_21[1]["timeseries"]
+
+                    if isinstance(ts1, np.ndarray):
+                        ts1 = pd.Series(ts1)
+                    if isinstance(ts2, np.ndarray):
+                        ts2 = pd.Series(ts2)
+
+                    ts1 = ts1.reset_index(drop=True)
+                    ts2 = ts2.reset_index(drop=True)
                     corr = self.correlation.get_correlation(ts1, ts2)
                     if pd.isna(corr):
                         corr = 0
@@ -129,7 +156,7 @@ class StrategyLinkingGraphsByCorrelationSlidingWindow(StrategyLinkingMultipleGra
         return hashlib.md5(str_to_hash.encode()).hexdigest()
 
 
-class StrategyLinkingMultipleGraphsByTimeCooccurrence(StrategyLinkingMultipleGraphs):
+class StrategyLinkingMultipleGraphsByTimeCooccurrence(LinkMultiGraphNodesStrategy):
     """Links nodes from multiple graphs based on their sequential order."""
     def __init__(self, graphs):
         super().__init__(graphs, 3)
@@ -188,7 +215,7 @@ class StrategyLinkingMultipleGraphsByTimeCooccurrence(StrategyLinkingMultipleGra
         return self.graph, self.graphs
 
 
-class StrategyLinkingMultipleGraphsByPositionalCorrelationSlidingWindow(StrategyLinkingMultipleGraphs):
+class StrategyLinkingMultipleGraphsByPositionalCorrelationSlidingWindow(LinkMultiGraphNodesStrategy):
     def __init__(self, graphs, correlation):
         super().__init__(graphs, 4)
         self.correlation = correlation
@@ -237,8 +264,19 @@ class StrategyLinkingMultipleGraphsByPositionalCorrelationSlidingWindow(Strategy
                     continue
 
                 if node_11[1]['order'] == node_21[1]['order']:
-                    ts1 = node_11[1]["timeseries"].reset_index(drop=True)
-                    ts2 = node_21[1]["timeseries"].reset_index(drop=True)
+                    # ts1 = node_11[1]["timeseries"].reset_index(drop=True)
+                    # ts2 = node_21[1]["timeseries"].reset_index(drop=True)
+                    import numpy as np
+                    ts1 = node_11[1]["timeseries"]
+                    ts2 = node_21[1]["timeseries"]
+
+                    if isinstance(ts1, np.ndarray):
+                        ts1 = pd.Series(ts1)
+                    if isinstance(ts2, np.ndarray):
+                        ts2 = pd.Series(ts2)
+
+                    ts1 = ts1.reset_index(drop=True)
+                    ts2 = ts2.reset_index(drop=True)
                     corr = self.correlation.get_correlation(ts1, ts2)
                     if pd.isna(corr):
                         corr = 0
@@ -250,7 +288,7 @@ class StrategyLinkingMultipleGraphsByPositionalCorrelationSlidingWindow(Strategy
 
         return self.graph, self.graphs
 
-class StrategyLinkingMultipleGraphsSlidingWindow(StrategyLinkingMultipleGraphs):
+class StrategyLinkingMultipleGraphsSlidingWindow(LinkMultiGraphNodesStrategy):
     """Sequentially links graphs made by sliding window mechanism."""
     def __init__(self, graphs, graph_order):
         super().__init__(graphs, 0)
@@ -296,7 +334,7 @@ class StrategyLinkingMultipleGraphsSlidingWindow(StrategyLinkingMultipleGraphs):
         return self.graph, self.graphs
     
 
-class StrategyLinkingMultipleGraphsDynamicTimeWarping(StrategyLinkingMultipleGraphs):
+class StrategyLinkingMultipleGraphsDynamicTimeWarping(LinkMultiGraphNodesStrategy):
     """Connects visibility graphs based on Dynamic time warping."""
     def __init__(self, graphs):
         super().__init__(graphs, 4)
@@ -344,6 +382,8 @@ class StrategyLinkingMultipleGraphsDynamicTimeWarping(StrategyLinkingMultipleGra
         return self.graph, self.graphs
 
 
+# Register the LinkGraphs builder as the single entry point for this strategy group.
+@register_strategy("link_multigraph_nodes", "LinkGraphs")
 class LinkGraphs:
     """
     Builder class for linking multiple graphs, through which we can access linking strategies.
@@ -371,17 +411,17 @@ class LinkGraphs:
         self.command_array.append(StrategyLinkingMultipleGraphsSlidingWindow(self.graphs, self.graph_order))
         return self
     
-    def correlation(self, corr):
+    def correlation(self, corr=None):
         """Notes that we want to connect graphs in a multivariate graph based on correlation."""
         self.command_array.append(StrategyLinkingGraphsByCorrelation(self.graphs, corr))
         return self
     
-    def correlation_sliding_window(self, corr):
+    def correlation_sliding_window(self, corr=None):
         """Notes that we want to connect graphs in a multivariate graph based on correlation for sliding window graph."""
         self.command_array.append(StrategyLinkingGraphsByCorrelationSlidingWindow(self.graphs, corr))
         return self
     
-    def positional_correlation_sliding_window(self, corr):
+    def positional_correlation_sliding_window(self, corr=None):
         """Notes that we want to connect graphs in a multivariate graph based on correlation for same positioned windows of series."""
         self.command_array.append(StrategyLinkingMultipleGraphsByPositionalCorrelationSlidingWindow(self.graphs, corr))
         return self
@@ -402,6 +442,13 @@ class LinkGraphs:
             self.graph, self.graphs = strat.apply()
 
         return self.graph
+
+
+# ---- Factory ----
+
+def get_link_multigraph_strategy_builder():
+    
+    return get_strategy("link_multigraph_nodes", "LinkGraphs")
 
 
 class Correlation:

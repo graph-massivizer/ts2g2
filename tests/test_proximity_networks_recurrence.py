@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from strategies.ts2g import  TS2G_STRATEGY_REGISTRY
+from strategies.ts2g import  get_ts2g_strategy_builder
 from pipeline import T2G2Pipeline
 
 
@@ -16,16 +16,15 @@ class TestRecurrenceNetwork(unittest.TestCase):
         # G = recurrence_network.create(recurrence_type="epsilon")
         
         
-        builder_cls = TS2G_STRATEGY_REGISTRY["proximity"] #registry
+        builder_cls = get_ts2g_strategy_builder("proximity") #registry
         strategy_ts = builder_cls(method="recurrence", k= self.k, epsilon=self.epsilon,recurrence_type="epsilon").get_strategy() #builder
 
         pipeline = T2G2Pipeline()
         (
             pipeline.load_timeseries(self.time_series)
                     .preprocess()
-                    .apply_view_strategy()
-                    .to_graph(ts2g_strategy=strategy_ts)
-                    .merge()
+                    .viewing()
+                    .to_graph(strategy_ts)
         )
 
         G = pipeline.get_Graph()
@@ -49,16 +48,15 @@ class TestRecurrenceNetwork(unittest.TestCase):
         # recurrence_network = proximity_networks.ProximityNetwork.RecurrenceNetwork(self.time_series, self.k, very_small_epsilon)
         # G = recurrence_network.create(recurrence_type="epsilon")
         
-        builder_cls = TS2G_STRATEGY_REGISTRY["proximity"] #registry
+        builder_cls = get_ts2g_strategy_builder("proximity") #registry
         strategy_ts = builder_cls(method="recurrence", k= self.k, epsilon=very_small_epsilon,recurrence_type="epsilon").get_strategy() #builder
 
         pipeline = T2G2Pipeline()
         (
             pipeline.load_timeseries(self.time_series)
                     .preprocess()
-                    .apply_view_strategy()
-                    .to_graph(ts2g_strategy=strategy_ts)
-                    .merge()
+                    .viewing()
+                    .to_graph(strategy_ts)
         )
 
         G = pipeline.get_Graph()
@@ -74,16 +72,15 @@ class TestRecurrenceNetwork(unittest.TestCase):
         # recurrence_network = proximity_networks.ProximityNetwork.RecurrenceNetwork(self.time_series, self.k, self.epsilon)
         # G = recurrence_network.create(recurrence_type="k-nnn")
         
-        builder_cls = TS2G_STRATEGY_REGISTRY["proximity"] #registry
+        builder_cls = get_ts2g_strategy_builder("proximity") #registry
         strategy_ts = builder_cls(method="recurrence", k= self.k, epsilon=self.epsilon,recurrence_type="k-nnn").get_strategy() #builder
 
         pipeline = T2G2Pipeline()
         (
             pipeline.load_timeseries(self.time_series)
                     .preprocess()
-                    .apply_view_strategy()
-                    .to_graph(ts2g_strategy=strategy_ts)
-                    .merge()
+                    .viewing()
+                    .to_graph(strategy_ts)
         )
 
         G = pipeline.get_Graph()
@@ -102,16 +99,15 @@ class TestRecurrenceNetwork(unittest.TestCase):
         # recurrence_network = proximity_networks.ProximityNetwork.RecurrenceNetwork(self.time_series, large_k, self.epsilon)
         # G = recurrence_network.create(recurrence_type="k-nnn")
         
-        builder_cls = TS2G_STRATEGY_REGISTRY["proximity"] #registry
+        builder_cls = get_ts2g_strategy_builder("proximity") #registry
         strategy_ts = builder_cls(method="recurrence", k= large_k, epsilon=self.epsilon,recurrence_type="k-nnn").get_strategy() #builder
 
         pipeline = T2G2Pipeline()
         (
             pipeline.load_timeseries(self.time_series)
                     .preprocess()
-                    .apply_view_strategy()
-                    .to_graph(ts2g_strategy=strategy_ts)
-                    .merge()
+                    .viewing()
+                    .to_graph(strategy_ts)
         )
 
         G = pipeline.get_Graph()
@@ -129,17 +125,15 @@ class TestRecurrenceNetwork(unittest.TestCase):
         # G = recurrence_network.create(recurrence_type="annn")
         
         
-        builder_cls = TS2G_STRATEGY_REGISTRY["proximity"] #registry
+        builder_cls = get_ts2g_strategy_builder("proximity") #registry
         strategy_ts = builder_cls(method="recurrence", k= self.k, epsilon=self.epsilon,recurrence_type="annn").get_strategy() #builder
 
         pipeline = T2G2Pipeline()
         (
             pipeline.load_timeseries(self.time_series)
                     .preprocess()
-                    .apply_view_strategy()
-                    .to_graph(ts2g_strategy=strategy_ts)
-                    .merge()
-        )
+                    .viewing()
+                    .to_graph(strategy_ts)        )
 
         G = pipeline.get_Graph()
 
@@ -163,16 +157,15 @@ class TestRecurrenceNetwork(unittest.TestCase):
         # recurrence_network = proximity_networks.ProximityNetwork.RecurrenceNetwork(time_series, self.k, self.epsilon)
         # G = recurrence_network.create(recurrence_type="annn")
         
-        builder_cls = TS2G_STRATEGY_REGISTRY["proximity"] #registry
+        builder_cls = get_ts2g_strategy_builder("proximity") #registry
         strategy_ts = builder_cls(method="recurrence", k= self.k, epsilon=self.epsilon,recurrence_type="annn").get_strategy() #builder
 
         pipeline = T2G2Pipeline()
         (
             pipeline.load_timeseries(time_series)
                     .preprocess()
-                    .apply_view_strategy()
-                    .to_graph(ts2g_strategy=strategy_ts)
-                    .merge()
+                    .viewing()
+                    .to_graph(strategy_ts)
         )
 
         G = pipeline.get_Graph()

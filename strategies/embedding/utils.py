@@ -1,4 +1,3 @@
-from .ts2g2_embeddings import TrainGraphEmbeddingModel
 import numpy as np
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 import pandas as pd

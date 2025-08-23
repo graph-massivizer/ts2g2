@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from strategies.ts2g import  TS2G_STRATEGY_REGISTRY
+from strategies.ts2g import  get_ts2g_strategy_builder
 from pipeline import T2G2Pipeline
 
 
@@ -17,16 +17,15 @@ class TestCorrelationNetwork(unittest.TestCase):
         # Create the correlation network
         # G = self.correlation_network.create()
         
-        builder_cls = TS2G_STRATEGY_REGISTRY["proximity"] #registry
+        builder_cls = get_ts2g_strategy_builder("proximity") #registry
         strategy_ts = builder_cls(method="correlation", segment_length= self.segment_length, threshold=self.threshold).get_strategy() #builder
 
         pipeline = T2G2Pipeline()
         (
             pipeline.load_timeseries(self.time_series)
                     .preprocess(method="minmax")
-                    .apply_view_strategy()
-                    .to_graph(ts2g_strategy=strategy_ts)
-                    .merge()
+                    .viewing()
+                    .to_graph(strategy_ts)
         )
 
         G = pipeline.get_Graph()
@@ -50,16 +49,15 @@ class TestCorrelationNetwork(unittest.TestCase):
         # G = high_threshold_network.create()
         
         
-        builder_cls = TS2G_STRATEGY_REGISTRY["proximity"] #registry
+        builder_cls = get_ts2g_strategy_builder("proximity") #registry
         strategy_ts = builder_cls(method="correlation", segment_length= self.segment_length, threshold=1.0).get_strategy() #builder
 
         pipeline = T2G2Pipeline()
         (
             pipeline.load_timeseries(self.time_series)
                     .preprocess(method="minmax")
-                    .apply_view_strategy()
-                    .to_graph(ts2g_strategy=strategy_ts)
-                    .merge()
+                    .viewing()
+                    .to_graph(strategy_ts)
         )
 
         G = pipeline.get_Graph()
@@ -73,16 +71,15 @@ class TestCorrelationNetwork(unittest.TestCase):
         # low_threshold_network = proximity_networks.ProximityNetwork.CorrelationNetwork(self.time_series, self.segment_length, -1.0)
         # G = low_threshold_network.create()
         
-        builder_cls = TS2G_STRATEGY_REGISTRY["proximity"] #registry
+        builder_cls = get_ts2g_strategy_builder("proximity") #registry
         strategy_ts = builder_cls(method="correlation", segment_length= self.segment_length, threshold=-1.0).get_strategy() #builder
 
         pipeline = T2G2Pipeline()
         (
             pipeline.load_timeseries(self.time_series)
                     .preprocess(method="minmax")
-                    .apply_view_strategy()
-                    .to_graph(ts2g_strategy=strategy_ts)
-                    .merge()
+                    .viewing()
+                    .to_graph(strategy_ts)
         )
 
         G = pipeline.get_Graph()
@@ -96,16 +93,15 @@ class TestCorrelationNetwork(unittest.TestCase):
         small_time_series = np.array([1, 2])
         # small_network = proximity_networks.ProximityNetwork.CorrelationNetwork(small_time_series, 3, self.threshold)
         # G = small_network.create()
-        builder_cls = TS2G_STRATEGY_REGISTRY["proximity"] #registry
+        builder_cls = get_ts2g_strategy_builder("proximity") #registry
         strategy_ts = builder_cls(method="correlation", segment_length= self.segment_length, threshold=self.threshold).get_strategy() #builder
 
         pipeline = T2G2Pipeline()
         (
             pipeline.load_timeseries(small_time_series)
                     .preprocess(method="minmax")
-                    .apply_view_strategy()
-                    .to_graph(ts2g_strategy=strategy_ts)
-                    .merge()
+                    .viewing()
+                    .to_graph(strategy_ts)
         )
 
         G = pipeline.get_Graph()

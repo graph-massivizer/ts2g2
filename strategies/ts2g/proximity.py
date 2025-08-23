@@ -3,6 +3,12 @@ from core import TimeGraph
 import networkx as nx
 import numpy as np
 from scipy.spatial.distance import pdist, squareform
+from typing import TYPE_CHECKING
+from strategies.ts2g.interface import TimeseriesToGraphStrategy
+
+if TYPE_CHECKING:
+    from core.time_series import Timeseries
+    from core.graphs import BaseTimeGraph
 
 # --- Extracted strategies for proximity graphs ---
 
@@ -154,7 +160,7 @@ class RecurrenceNetworkStrategy:
 
 
 # --- ProximityGraphStrategy using extracted strategies ---
-class ProximityGraphStrategy:
+class ProximityGraphStrategy(TimeseriesToGraphStrategy):
     def __init__(self, method="cycle", segment_length=10, threshold=0.5, k=5, epsilon=0.5, recurrence_type="epsilon"):
         """
         Initialize the ProximityNetwork with given parameters.
@@ -176,11 +182,15 @@ class ProximityGraphStrategy:
         self.network = None
         self.recurrence_type = recurrence_type
 
-    def to_graph(self, timeseries):
-        self.time_series = timeseries.get_data()
+    def to_graph(self, ts: "Timeseries") -> "BaseTimeGraph":
+        """Create the appropriate proximity network based on the configured method.
+
+        Parameters
+        ----------
+        ts : Timeseries
+            Input univariate time series container.
         """
-        Create the appropriate network based on the method and recurrence type.
-        """
+        self.time_series = ts.get_data()
         # Choose strategy based on method
         if self.method == "cycle":
             strategy = CycleNetworkStrategy(self.time_series, self.segment_length, self.threshold)
@@ -208,4 +218,3 @@ class ProximityGraphStrategy:
     
     def _get_bins(self):
         return None, None
-

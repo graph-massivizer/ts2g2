@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from strategies.ts2g import  TS2G_STRATEGY_REGISTRY
+from strategies.ts2g import  get_ts2g_strategy_builder
 from pipeline import T2G2Pipeline
 
 
@@ -15,16 +15,15 @@ class TestCycleNetwork(unittest.TestCase):
     def test_create_cycle_network(self):
         # Create the cycle network
         # G = self.cycle_network.create()
-        builder_cls = TS2G_STRATEGY_REGISTRY["proximity"] #registry
+        builder_cls = get_ts2g_strategy_builder("proximity") #registry
         strategy_ts = builder_cls(method="cycle", segment_length= self.segment_length, threshold=self.threshold).get_strategy() #builder
 
         pipeline = T2G2Pipeline()
         (
             pipeline.load_timeseries(self.time_series)
                     .preprocess(method="minmax")
-                    .apply_view_strategy()
-                    .to_graph(ts2g_strategy=strategy_ts)
-                    .merge()
+                    .viewing()
+                    .to_graph(strategy_ts)
         )
 
         G = pipeline.get_Graph()
@@ -51,16 +50,15 @@ class TestCycleNetwork(unittest.TestCase):
         # high_threshold_network = proximity_networks.ProximityNetwork.CycleNetwork(self.time_series, self.segment_length, 1.0)
         # G = high_threshold_network.create()
         
-        builder_cls = TS2G_STRATEGY_REGISTRY["proximity"] #registry
+        builder_cls = get_ts2g_strategy_builder("proximity") #registry
         strategy_ts = builder_cls(method="cycle", segment_length= self.segment_length, threshold=1.0).get_strategy() #builder
 
         pipeline = T2G2Pipeline()
         (
             pipeline.load_timeseries(self.time_series)
                     .preprocess(method="minmax")
-                    .apply_view_strategy()
-                    .to_graph(ts2g_strategy=strategy_ts)
-                    .merge()
+                    .viewing()
+                    .to_graph(strategy_ts)
         )
 
         G = pipeline.get_Graph()
