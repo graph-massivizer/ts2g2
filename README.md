@@ -1,26 +1,36 @@
 # ts2g<sup>2</sup>
 
 TS2G<sup>2</sup> stands for "timeseries to graphs and back". The library implements a variety of strategies to convert timeseries into graphs, and convert graphs into sequences. Below, we provide a code snippet to generate a graph from timeseries:
-    
-    # load time series from a file
-    timegraph = Timeseries(CsvStock(some_file_path, "ColumnOfInterest").from_csv())\
 
-    # and preprocess the timeseries with multiple preprocessing strategies
-    .with_preprocessing(TimeseriesPreprocessingComposite()\
-        .add_strategy(TimeseriesPreprocessingSegmentation(60, 120))\
-        .add_strategy(TimeseriesPreprocessingSlidingWindow(5)))\
+```python
+from pipeline import T2G2Pipeline
+from strategies.view import get_view_strategy
+from strategies.ts2g.strategy_builder import get_ts2g_strategy_builder
+from strategies.merge import get_link_multigraph_strategy_builder
+import utils
 
-    # then create a graph from the timeseries, following a particular strategy
-    .to_graph(BuildTimeseriesToGraphNaturalVisibilityStrategy().get_strategy())\
+ts_data = utils.CsvFile(some_file_path, "ColumnOfInterest").from_csv()
+view_strategy = get_view_strategy("slice")(start_index=60, end_index=120)
+view_window = get_view_strategy("sliding_window")(window_size=5)
 
-    # link graphs that result from the same timeseries, but at different sliding window frames
-    .link(LinkGraphs().sliding_window())\
+builder_cls = get_ts2g_strategy_builder("natural_visibility")
+ts2g_strategy = builder_cls().get_strategy()
 
-    # and combine identical graphs that result from the abovementioned time windows into single nodes
-    .combine_identical_nodes_slid_win()\
+link_builder = get_link_multigraph_strategy_builder()
+link_strategy = link_builder().sliding_window()
 
-    # finally, draw the graph
-    .draw("red")
+pipeline = (
+    T2G2Pipeline()
+    .load_timeseries(ts_data)
+    .viewing(view_strategy)
+    .viewing(view_window)
+    .to_graph(ts2g_strategy)
+    .link_graphs(link_strategy)
+    .combine_identical_subgraphs()
+)
+
+G = pipeline.get_Graph()
+```
 
 For a more detailed example, look at the [Amazon stocks demo](https://github.com/graph-massivizer/ts2g2/blob/main/tutorials/demo-ts2g2.ipynb).
 
@@ -240,11 +250,22 @@ The package is a joint effort between the [Jožef Stefan Institute](https://www.
 
 Graphs are converted back to timeseries by sampling node values from the graph following different strategies. Below, we provide a short snippet of code, to illustrate how this can be done.
 
-    timegraph.to_sequence(ToSequenceVisitorSlidingWindow()\
-    .next_node_strategy(StrategySelectNextNodeRandomlyFromFirstGraph())\
-    .next_value_strategy(StrategyNextValueInNodeRandomForSlidingWindow().skip_every_x_steps(1))\
-    .ts_length(50))\
-    .draw_sequence()
+```python
+from strategies.g2ts import get_g2ts_strategy
+from strategies.g2ts import StrategySelectNextNodeRandomlyFromFirstGraph, StrategyNextValueInNodeRandomForSlidingWindow
+from visualization import draw_sequences
+
+g2ts_cls = get_g2ts_strategy("sliding_window")
+g2ts = (
+    g2ts_cls()
+    .next_node_strategy(StrategySelectNextNodeRandomlyFromFirstGraph())
+    .next_value_strategy(StrategyNextValueInNodeRandomForSlidingWindow().skip_every_x_steps(1))
+    .ts_length(50)
+)
+
+sequences = pipeline.to_timeseries(g2ts).sequences
+draw_sequences(sequences, node_strategy_name="RandomFromFirstGraph", value_strategy_name="RandomForSlidingWindow")
+```
 
 When choosing the next node, the following strategies have been implemented so far: random node, random node neighbour, random node degree, random walk, random walk with restart, random walk with jump.
 
@@ -254,4 +275,3 @@ When using this work for research purposes, we would appreciate it if the follow
 
 
 Below we provide a curated list of papers related to our research in this area:
-

@@ -7,6 +7,9 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+.vscode/
+dss.ipynb
+note.md
 .Python
 build/
 develop-eggs/
@@ -186,3 +189,4 @@ tutorials/kendall_tau_results/**
 embeddings/ts2vec/**
 !embeddings/ts2vec/.gitkeep
 
+./vscode/
